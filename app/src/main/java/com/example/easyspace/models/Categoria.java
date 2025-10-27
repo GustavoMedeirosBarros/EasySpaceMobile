@@ -4,6 +4,9 @@ public class Categoria {
     private String nome;
     private int iconResId;
 
+    public Categoria() {
+    }
+
     public Categoria(String nome, int iconResId) {
         this.nome = nome;
         this.iconResId = iconResId;
@@ -25,3 +28,4 @@ public class Categoria {
         this.iconResId = iconResId;
     }
 }
+

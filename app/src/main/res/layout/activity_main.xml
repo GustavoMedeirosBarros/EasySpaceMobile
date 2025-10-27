@@ -4,301 +4,286 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    android:background="@android:color/white">
+    android:background="@color/background">
 
-    <androidx.core.widget.NestedScrollView
+    <ScrollView
+        android:id="@+id/scrollViewMain"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="80dp">
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingBottom="80dp">
 
-            <!-- Header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:padding="20dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="16dp"
                 android:orientation="vertical"
-                android:layout_marginBottom="24dp">
+                android:elevation="2dp"
+                android:background="@color/white">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Bem-vindo ao EasySpace"
+                    android:text="Encontre seu espaço ideal"
                     android:textSize="24sp"
                     android:textStyle="bold"
-                    android:textColor="@android:color/black" />
+                    android:textColor="@color/text_primary"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="12dp" />
 
-                <LinearLayout
-                    android:layout_width="wrap_content"
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginTop="4dp">
+                    app:cardCornerRadius="28dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="@color/divider"
+                    app:cardBackgroundColor="@color/surface">
 
-                    <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:src="@drawable/ic_location"
-                        android:layout_marginEnd="4dp"
-                        app:tint="@android:color/darker_gray" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Sorocaba, SP"
-                        android:textSize="14sp"
-                        android:textColor="@android:color/darker_gray" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="12dp">
 
-                </LinearLayout>
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_search"
+                            app:tint="@color/text_primary" />
+
+                        <EditText
+                            android:id="@+id/editTextPesquisa"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:background="@android:color/transparent"
+                            android:hint="Inicie sua busca"
+                            android:textSize="16sp"
+                            android:textColor="@color/text_primary"
+                            android:textColorHint="@color/text_hint"
+                            android:fontFamily="sans-serif"
+                            android:inputType="text"
+                            android:maxLines="1" />
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
 
             </LinearLayout>
 
-            <!-- Search Bar -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardSearch"
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                app:cardCornerRadius="25dp"
-                app:cardElevation="4dp"
-                app:cardBackgroundColor="@android:color/white"
-                android:clickable="true"
-                android:focusable="true">
+                android:orientation="vertical"
+                android:paddingTop="24dp"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:text="Categorias"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:fontFamily="sans-serif-medium" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewCategorias"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:clipToPadding="false" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="28dp"
+                android:paddingBottom="8dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:padding="16dp">
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp">
 
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_search"
-                        android:layout_marginEnd="12dp"
-                        app:tint="@android:color/darker_gray" />
-
-                    <EditText
-                        android:id="@+id/editTextSearch"
+                    <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:hint="Onde você quer trabalhar?"
-                        android:background="@android:color/transparent"
-                        android:textSize="16sp"
-                        android:textColorHint="@android:color/darker_gray"
-                        android:textColor="@android:color/black" />
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_filter"
-                        android:layout_marginStart="12dp"
-                        app:tint="@android:color/darker_gray" />
+                        android:text="Espaços em Destaque"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:fontFamily="sans-serif-medium" />
 
                 </LinearLayout>
 
-            </com.google.android.material.card.MaterialCardView>
+                <TextView
+                    android:id="@+id/textViewEmptyState"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="32dp"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:text="Nenhum resultado encontrado"
+                    android:textSize="16sp"
+                    android:textColor="@color/text_secondary"
+                    android:textAlignment="center"
+                    android:gravity="center"
+                    android:visibility="gone" />
 
-            <!-- Categories Section -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewLocais"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:clipToPadding="false" />
+            </LinearLayout>
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Categorias"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/black" />
+                android:orientation="vertical"
+                android:paddingTop="28dp"
+                android:paddingBottom="8dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Ver todas"
-                    android:textSize="14sp"
-                    android:textColor="#FF9800"
-                    android:textStyle="bold" />
+                    android:layout_marginStart="20dp"
+                    android:text="Recentemente Adicionados"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:fontFamily="sans-serif-medium" />
 
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewRecentes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:clipToPadding="false" />
             </LinearLayout>
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerViewCategorias"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:clipToPadding="false"
-                android:paddingStart="0dp"
-                android:paddingEnd="16dp" />
-
-            <!-- Featured Locations Section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Espaços em destaque"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/black" />
+                android:orientation="vertical"
+                android:paddingTop="28dp"
+                android:paddingBottom="8dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Ver todos"
-                    android:textSize="14sp"
-                    android:textColor="#FF9800"
-                    android:textStyle="bold" />
+                    android:layout_marginStart="20dp"
+                    android:text="Mais Procurados"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:fontFamily="sans-serif-medium" />
 
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewPopulares"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:clipToPadding="false" />
             </LinearLayout>
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerViewLocais"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:clipToPadding="false"
-                android:paddingStart="0dp"
-                android:paddingEnd="16dp" />
-
-            <!-- Recently Added Section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Adicionados recentemente"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/black" />
+                android:orientation="vertical"
+                android:paddingTop="28dp"
+                android:paddingBottom="24dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Ver todos"
-                    android:textSize="14sp"
-                    android:textColor="#FF9800"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerViewRecentes"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:clipToPadding="false"
-                android:paddingStart="0dp"
-                android:paddingEnd="16dp" />
-
-            <!-- Most Popular Section -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Mais procurados"
-                    android:textSize="18sp"
+                    android:layout_marginStart="20dp"
+                    android:text="Melhores Avaliações"
+                    android:textSize="20sp"
                     android:textStyle="bold"
-                    android:textColor="@android:color/black" />
+                    android:textColor="@color/text_primary"
+                    android:fontFamily="sans-serif-medium" />
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewMelhoresAvaliacoes"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Ver todos"
-                    android:textSize="14sp"
-                    android:textColor="#FF9800"
-                    android:textStyle="bold" />
-
+                    android:layout_marginTop="16dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:clipToPadding="false" />
             </LinearLayout>
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerViewPopulares"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:clipToPadding="false"
-                android:paddingStart="0dp"
-                android:paddingEnd="16dp" />
-
-            <!-- Best Rated Section -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Melhores avaliações"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/black" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Ver todos"
-                    android:textSize="14sp"
-                    android:textColor="#FF9800"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerViewMelhoresAvaliacoes"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:clipToPadding="false"
-                android:paddingStart="0dp"
-                android:paddingEnd="16dp" />
 
         </LinearLayout>
 
-    </androidx.core.widget.NestedScrollView>
+    </ScrollView>
 
-    <!-- Bottom Navigation -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:indeterminateTint="@color/primary"
+        android:visibility="gone" />
+
+    <ProgressBar
+        android:id="@+id/progressBarProfile"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:indeterminateTint="@color/primary"
+        android:visibility="gone" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabCriarAnuncio"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="100dp"
+        android:src="@drawable/ic_add"
+        android:contentDescription="Criar anúncio"
+        app:backgroundTint="@color/primary"
+        app:tint="@color/white"
+        app:elevation="6dp"
+        app:borderWidth="0dp" />
+
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:background="@android:color/white"
-        app:elevation="8dp"
-        app:menu="@menu/bottom_navigation_menu"
-        app:itemTextColor="@color/bottom_nav_color"
+        android:elevation="8dp"
         app:itemIconTint="@color/bottom_nav_color"
-        app:labelVisibilityMode="labeled" />
+        app:itemTextColor="@color/bottom_nav_color"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/bottom_navigation_menu" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

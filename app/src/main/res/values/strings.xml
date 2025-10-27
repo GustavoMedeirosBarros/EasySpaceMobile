@@ -1,3 +1,80 @@
 <resources>
     <string name="app_name">EasySpace</string>
+    <string name="default_web_client_id">522684676593-ec89hv8or5hda27o2upu54883tsea9t8.apps.googleusercontent.com</string>
+
+    <string name="nav_home">Início</string>
+    <string name="nav_search">Buscar</string>
+    <string name="nav_favorites">Favoritos</string>
+    <string name="nav_messages">Mensagens</string>
+    <string name="nav_profile">Perfil</string>
+
+    <string name="search_hint">Buscar espaços...</string>
+    <string name="categorias_title">Categorias</string>
+    <string name="destaques_title">Destaques</string>
+    <string name="recentes_title">Adicionados Recentemente</string>
+    <string name="populares_title">Mais Populares</string>
+    <string name="melhores_avaliacoes_title">Melhores Avaliações</string>
+
+    <string name="login_title">Bem-vindo de volta!</string>
+    <string name="login_subtitle">Faça login para continuar</string>
+    <string name="register_title">Criar Conta</string>
+    <string name="register_subtitle">Preencha seus dados</string>
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Senha</string>
+    <string name="confirm_password_hint">Confirmar Senha</string>
+    <string name="name_hint">Nome Completo</string>
+    <string name="phone_hint">Telefone</string>
+    <string name="document_hint">Documento</string>
+    <string name="cep_hint">CEP</string>
+    <string name="city_hint">Cidade</string>
+    <string name="state_hint">Estado</string>
+    <string name="address_hint">Endereço</string>
+    <string name="complement_hint">Complemento</string>
+    <string name="neighborhood_hint">Bairro</string>
+    <string name="birth_date_hint">Data de Nascimento</string>
+    <string name="gender_hint">Gênero</string>
+    <string name="login_button">Entrar</string>
+    <string name="register_button">Cadastrar</string>
+    <string name="google_login">Continuar com Google</string>
+    <string name="no_account">Não tem uma conta?</string>
+    <string name="register_here">Cadastre-se aqui</string>
+    <string name="have_account">Já tem uma conta?</string>
+    <string name="login_here">Faça login</string>
+
+    <string name="profile_title">Meu Perfil</string>
+    <string name="edit_profile">Editar Perfil</string>
+    <string name="logout">Sair</string>
+
+    <string name="price_per_hour">R$ %.2f/hora</string>
+    <string name="capacity">Capacidade: %d pessoas</string>
+    <string name="rating">%.1f</string>
+
+    <string name="create_listing_title">Criar Anúncio</string>
+    <string name="space_name_hint">Nome do espaço</string>
+    <string name="description_hint">Descrição</string>
+    <string name="category_hint">Categoria</string>
+    <string name="price_hint">Preço</string>
+    <string name="location_type_hint">Tipo de Locação</string>
+    <string name="capacity_hint">Capacidade</string>
+    <string name="hours_hint">Horário de funcionamento</string>
+    <string name="amenities_title">Comodidades</string>
+    <string name="wifi">Wi-Fi</string>
+    <string name="air_conditioning">Ar Condicionado</string>
+    <string name="coffee">Café</string>
+    <string name="projector">Projetor</string>
+    <string name="parking">Estacionamento</string>
+    <string name="accessibility">Acessibilidade</string>
+    <string name="publish_button">Publicar Anúncio</string>
+
+    <string name="explore_title">Explorar</string>
+    <string name="filter_category">Categoria</string>
+    <string name="filter_price">Preço</string>
+    <string name="filter_capacity">Capacidade</string>
+    <string name="apply_filters">Aplicar Filtros</string>
+    <string name="clear_filters">Limpar Filtros</string>
+
+    <string name="no_results">Nenhum resultado encontrado</string>
+    <string name="loading">Carregando...</string>
+    <string name="error">Erro</string>
+    <string name="success">Sucesso</string>
 </resources>

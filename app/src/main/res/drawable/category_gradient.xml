@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Added subtle gradient for category cards -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:angle="135"
+        android:startColor="#FFF5F0"
+        android:endColor="#FFFFFF"
+        android:type="linear" />
+</shape>

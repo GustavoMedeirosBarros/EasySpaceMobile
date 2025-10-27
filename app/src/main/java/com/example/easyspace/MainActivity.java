@@ -4,78 +4,95 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.easyspace.utils.UserManager;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.example.easyspace.adapters.LocalAdapter;
 import com.example.easyspace.adapters.CategoriaAdapter;
-import com.example.easyspace.models.Local;
+import com.example.easyspace.adapters.LocalAdapter;
 import com.example.easyspace.models.Categoria;
-import java.util.ArrayList;
-import java.util.List;
+import com.example.easyspace.models.Local;
+import com.example.easyspace.utils.FirebaseManager;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private EditText editTextSearch;
-    private RecyclerView recyclerViewCategorias, recyclerViewLocais, recyclerViewRecentes,
-            recyclerViewPopulares, recyclerViewMelhoresAvaliacoes;
+    private EditText editTextPesquisa;
+    private RecyclerView recyclerViewCategorias, recyclerViewLocais;
+    private RecyclerView recyclerViewRecentes, recyclerViewPopulares, recyclerViewMelhoresAvaliacoes;
     private BottomNavigationView bottomNavigation;
+    private FloatingActionButton fabCriarAnuncio;
+    private ProgressBar progressBar;
+    private TextView textViewEmptyState;
 
     private CategoriaAdapter categoriaAdapter;
-    private LocalAdapter locaisAdapter, recentesAdapter, popularesAdapter, melhoresAdapter;
+    private LocalAdapter locaisAdapter, recentesAdapter, popularesAdapter, melhoresAvaliacoesAdapter;
 
-    private UserManager userManager;
+    private FirebaseManager firebaseManager;
+    private FirebaseFirestore db;
     private List<Local> allLocais;
+    private String selectedCategory = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        userManager = new UserManager(this);
+        firebaseManager = new FirebaseManager();
+        db = FirebaseFirestore.getInstance();
         initViews();
         setupRecyclerViews();
         setupBottomNavigation();
         setupSearch();
-        loadData();
+        setupFab();
+        loadCategorias();
+
+        if (getIntent().getBooleanExtra("focusSearch", false)) {
+            editTextPesquisa.requestFocus();
+        }
     }
 
     private void initViews() {
-        editTextSearch = findViewById(R.id.editTextSearch);
+        editTextPesquisa = findViewById(R.id.editTextPesquisa);
         recyclerViewCategorias = findViewById(R.id.recyclerViewCategorias);
         recyclerViewLocais = findViewById(R.id.recyclerViewLocais);
         recyclerViewRecentes = findViewById(R.id.recyclerViewRecentes);
         recyclerViewPopulares = findViewById(R.id.recyclerViewPopulares);
         recyclerViewMelhoresAvaliacoes = findViewById(R.id.recyclerViewMelhoresAvaliacoes);
         bottomNavigation = findViewById(R.id.bottomNavigation);
+        fabCriarAnuncio = findViewById(R.id.fabCriarAnuncio);
+        progressBar = findViewById(R.id.progressBar);
+        textViewEmptyState = findViewById(R.id.textViewEmptyState);
     }
 
     private void setupRecyclerViews() {
         recyclerViewCategorias.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        categoriaAdapter = new CategoriaAdapter(this, new ArrayList<>());
-        recyclerViewCategorias.setAdapter(categoriaAdapter);
-
         recyclerViewLocais.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        locaisAdapter = new LocalAdapter(this);
-        recyclerViewLocais.setAdapter(locaisAdapter);
-
         recyclerViewRecentes.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        recentesAdapter = new LocalAdapter(this);
-        recyclerViewRecentes.setAdapter(recentesAdapter);
-
         recyclerViewPopulares.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        popularesAdapter = new LocalAdapter(this);
-        recyclerViewPopulares.setAdapter(popularesAdapter);
-
         recyclerViewMelhoresAvaliacoes.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        melhoresAdapter = new LocalAdapter(this);
-        recyclerViewMelhoresAvaliacoes.setAdapter(melhoresAdapter);
+
+        locaisAdapter = new LocalAdapter(this, new ArrayList<>());
+        recentesAdapter = new LocalAdapter(this, new ArrayList<>());
+        popularesAdapter = new LocalAdapter(this, new ArrayList<>());
+        melhoresAvaliacoesAdapter = new LocalAdapter(this, new ArrayList<>());
+
+        recyclerViewLocais.setAdapter(locaisAdapter);
+        recyclerViewRecentes.setAdapter(recentesAdapter);
+        recyclerViewPopulares.setAdapter(popularesAdapter);
+        recyclerViewMelhoresAvaliacoes.setAdapter(melhoresAvaliacoesAdapter);
     }
 
     private void setupBottomNavigation() {
@@ -86,17 +103,13 @@ public class MainActivity extends AppCompatActivity {
 
             if (itemId == R.id.nav_home) {
                 return true;
-            } else if (itemId == R.id.nav_search) {
-                // Falta implementar busca
-                return true;
             } else if (itemId == R.id.nav_favorites) {
-                // Falta implementar favoritos
+                startActivity(new Intent(this, FavoritesActivity.class));
                 return true;
             } else if (itemId == R.id.nav_messages) {
-                // Falta implementar mensagens
                 return true;
             } else if (itemId == R.id.nav_profile) {
-                if (userManager.isLoggedIn()) {
+                if (firebaseManager.isLoggedIn()) {
                     startActivity(new Intent(this, ProfileActivity.class));
                 } else {
                     startActivity(new Intent(this, LoginActivity.class));
@@ -109,13 +122,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupSearch() {
-        editTextSearch.addTextChangedListener(new TextWatcher() {
+        editTextPesquisa.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filterLocais(s.toString());
+                filtrarLocais(s.toString());
             }
 
             @Override
@@ -123,35 +136,115 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void filterLocais(String query) {
+    private void setupFab() {
+        fabCriarAnuncio.setOnClickListener(v -> {
+            if (firebaseManager.isLoggedIn()) {
+                startActivity(new Intent(this, CriarAnuncioActivity.class));
+            } else {
+                startActivity(new Intent(this, LoginActivity.class));
+            }
+        });
+    }
+
+    private void loadCategorias() {
+        List<Categoria> categorias = getCategorias();
+        categoriaAdapter = new CategoriaAdapter(this, categorias, categoria -> {
+            selectedCategory = (categoria != null) ? categoria.getNome() : null;
+            filtrarLocais(editTextPesquisa.getText().toString());
+        });
+        recyclerViewCategorias.setAdapter(categoriaAdapter);
+    }
+
+    private void filtrarLocais(String texto) {
         if (allLocais == null) return;
 
-        List<Local> filteredList = new ArrayList<>();
-        for (Local local : allLocais) {
-            if (local.getNome().toLowerCase().contains(query.toLowerCase()) ||
-                    local.getDescricao().toLowerCase().contains(query.toLowerCase())) {
-                filteredList.add(local);
+        List<Local> locaisFiltrados = new ArrayList<>();
+
+        if (texto.isEmpty() && selectedCategory == null) {
+            locaisFiltrados.addAll(allLocais);
+            textViewEmptyState.setVisibility(View.GONE);
+        } else {
+            String textoLower = texto.toLowerCase();
+            for (Local local : allLocais) {
+                boolean matchesText = texto.isEmpty() ||
+                        local.getNome().toLowerCase().contains(textoLower) ||
+                        local.getEndereco().toLowerCase().contains(textoLower) ||
+                        local.getCategoria().toLowerCase().contains(textoLower);
+
+                boolean matchesCategory = selectedCategory == null ||
+                        local.getCategoria().equals(selectedCategory);
+
+                if (matchesText && matchesCategory) {
+                    locaisFiltrados.add(local);
+                }
+            }
+
+            if (locaisFiltrados.isEmpty()) {
+                textViewEmptyState.setVisibility(View.VISIBLE);
+                String mensagem = "Nenhum resultado encontrado";
+                if (!texto.isEmpty()) {
+                    mensagem += " para \"" + texto + "\"";
+                }
+                if (selectedCategory != null) {
+                    mensagem += " na categoria " + selectedCategory;
+                }
+                textViewEmptyState.setText(mensagem);
+            } else {
+                textViewEmptyState.setVisibility(View.GONE);
             }
         }
 
-        locaisAdapter.updateData(filteredList);
+        locaisAdapter.updateData(locaisFiltrados);
     }
 
-    private void loadData() {
-        List<Categoria> categorias = getCategorias();
-        categoriaAdapter.updateData(categorias);
+    private void loadLocaisFromFirebase() {
+        progressBar.setVisibility(View.VISIBLE);
 
-        allLocais = getLocais();
+        db.collection("locais")
+                .get()
+                .addOnCompleteListener(task -> {
+                    progressBar.setVisibility(View.GONE);
 
-        List<Local> destaque = allLocais.subList(0, Math.min(5, allLocais.size()));
-        List<Local> recentes = allLocais.subList(0, Math.min(4, allLocais.size()));
-        List<Local> populares = allLocais.subList(0, Math.min(6, allLocais.size()));
-        List<Local> melhores = allLocais.subList(0, Math.min(3, allLocais.size()));
+                    if (task.isSuccessful()) {
+                        allLocais = new ArrayList<>();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Local local = document.toObject(Local.class);
+                            if (local.getId() == null) {
+                                local.setId(document.getId());
+                            }
+                            allLocais.add(local);
+                        }
 
-        locaisAdapter.updateData(destaque);
+                        locaisAdapter.updateData(allLocais);
+                        updateSortedLists();
+
+                        if (allLocais.isEmpty()) {
+                            textViewEmptyState.setVisibility(View.VISIBLE);
+                            textViewEmptyState.setText("Nenhum espaço disponível no momento");
+                        } else {
+                            textViewEmptyState.setVisibility(View.GONE);
+                        }
+                    } else {
+                        textViewEmptyState.setVisibility(View.VISIBLE);
+                        textViewEmptyState.setText("Erro ao carregar espaços. Verifique sua conexão.");
+                    }
+                });
+    }
+
+    private void updateSortedLists() {
+        if (allLocais == null || allLocais.isEmpty()) return;
+
+        List<Local> recentes = new ArrayList<>(allLocais);
+        Collections.sort(recentes, (l1, l2) -> Long.compare(l2.getTimestamp(), l1.getTimestamp()));
         recentesAdapter.updateData(recentes);
+
+        List<Local> populares = new ArrayList<>(allLocais);
+        Collections.sort(populares, (l1, l2) -> Integer.compare(l2.getViewCount(), l1.getViewCount()));
         popularesAdapter.updateData(populares);
-        melhoresAdapter.updateData(melhores);
+
+        List<Local> melhoresAvaliacoes = new ArrayList<>(allLocais);
+        Collections.sort(melhoresAvaliacoes, (l1, l2) -> Double.compare(l2.getRating(), l1.getRating()));
+        melhoresAvaliacoesAdapter.updateData(melhoresAvaliacoes);
     }
 
     private List<Categoria> getCategorias() {
@@ -165,22 +258,10 @@ public class MainActivity extends AppCompatActivity {
         return categorias;
     }
 
-    private List<Local> getLocais() {
-        List<Local> locais = new ArrayList<>();
-
-        locais.add(new Local("Espaço Inovação", "Escritório moderno no centro", 150.0, "Centro", 4.8f,
-                "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=400"));
-        locais.add(new Local("CoWork Plus", "Ambiente colaborativo", 80.0, "Vila Olímpia", 4.5f,
-                "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=400"));
-        locais.add(new Local("Sala Executive", "Sala de reunião premium", 200.0, "Faria Lima", 4.9f,
-                "https://images.unsplash.com/photo-1431540015161-0bf868a2d407?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"));
-        locais.add(new Local("Studio Creative", "Estúdio para gravações", 120.0, "Pinheiros", 4.6f,
-                "https://images.unsplash.com/photo-1563089145-599997674d42?w=400"));
-        locais.add(new Local("Auditório Central", "Espaço para eventos", 300.0, "Centro", 4.7f,
-                "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"));
-        locais.add(new Local("Sala de Treinamento", "Ideal para cursos", 100.0, "Brooklin", 4.4f,
-                "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=400"));
-
-        return locais;
+    @Override
+    protected void onResume() {
+        super.onResume();
+        bottomNavigation.setSelectedItemId(R.id.nav_home);
+        loadLocaisFromFirebase();
     }
 }

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "522684676593",
+    "project_id": "easyspace-cb9f5",
+    "storage_bucket": "easyspace-cb9f5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:522684676593:android:b5ada086a1e1dc87c6ac50",
+        "android_client_info": {
+          "package_name": "com.example.easyspace"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "522684676593-ls8gblm1qq8bofpb82dmeg52cdmi6djh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.easyspace",
+            "certificate_hash": "f4fc26a3186c1ddf12ba48f1392e62f91bd81d99"
+          }
+        },
+        {
+          "client_id": "522684676593-ec89hv8or5hda27o2upu54883tsea9t8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaTJacemY-Hox0TMJ7rbbtQxyNHddDSKE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "522684676593-ec89hv8or5hda27o2upu54883tsea9t8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

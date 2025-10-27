@@ -1,251 +1,270 @@
 package com.example.easyspace.utils;
 
-import android.os.AsyncTask;
-import android.util.Patterns;
+import android.os.Handler;
+import android.os.Looper;
+
 import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.regex.Pattern;
 
 public class ValidationUtils {
 
-    public interface CEPCallback {
-        void onSuccess(String city, String state);
+    public interface CepCallback {
+        void onSuccess(String endereco, String bairro, String cidade, String estado);
         void onError(String message);
     }
 
-    public static boolean isValidEmail(String email) {
-        return email != null && Patterns.EMAIL_ADDRESS.matcher(email).matches();
+    public static class PasswordStrength {
+        public boolean isValid;
+        public String message;
+
+        public PasswordStrength(boolean isValid, String message) {
+            this.isValid = isValid;
+            this.message = message;
+        }
     }
 
-    public static boolean isValidPhone(String phone) {
-        if (phone == null) return false;
+    public static PasswordStrength validatePasswordStrength(String password) {
+        if (password == null || password.isEmpty()) {
+            return new PasswordStrength(false, "Senha é obrigatória");
+        }
 
-        // Remove todos os caracteres não numéricos
-        String cleanPhone = phone.replaceAll("[^0-9]", "");
+        if (password.length() < 8) {
+            return new PasswordStrength(false, "Senha deve ter pelo menos 8 caracteres");
+        }
 
-        // Verifica se tem 10 ou 11 dígitos (com DDD)
-        if (cleanPhone.length() != 10 && cleanPhone.length() != 11) {
+        if (password.length() > 128) {
+            return new PasswordStrength(false, "Senha muito longa (máximo 128 caracteres)");
+        }
+
+        boolean hasUppercase = !password.equals(password.toLowerCase());
+        boolean hasLowercase = !password.equals(password.toUpperCase());
+        boolean hasDigit = password.matches(".*\\d.*");
+        boolean hasSpecial = password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?].*");
+
+        if (!hasUppercase) {
+            return new PasswordStrength(false, "Senha deve conter pelo menos uma letra maiúscula");
+        }
+
+        if (!hasLowercase) {
+            return new PasswordStrength(false, "Senha deve conter pelo menos uma letra minúscula");
+        }
+
+        if (!hasDigit) {
+            return new PasswordStrength(false, "Senha deve conter pelo menos um número");
+        }
+
+        if (!hasSpecial) {
+            return new PasswordStrength(false, "Senha deve conter pelo menos um caractere especial");
+        }
+
+        return new PasswordStrength(true, "Senha forte");
+    }
+
+    public static boolean isValidName(String name) {
+        if (name == null || name.trim().isEmpty()) {
             return false;
         }
 
-        // Verifica se o DDD é válido (11 a 99)
-        if (cleanPhone.length() >= 2) {
-            int ddd = Integer.parseInt(cleanPhone.substring(0, 2));
-            if (ddd < 11 || ddd > 99) {
-                return false;
-            }
+        name = name.trim();
+
+        if (name.length() < 2 || name.length() > 100) {
+            return false;
         }
 
-        // Se tem 11 dígitos, o terceiro deve ser 9 (celular)
-        if (cleanPhone.length() == 11) {
-            return cleanPhone.charAt(2) == '9';
-        }
-
-        return true;
+        Pattern namePattern = Pattern.compile("^[a-zA-ZÀ-ÿ\\s'-]+$");
+        return namePattern.matcher(name).matches();
     }
 
-    public static boolean isValidCEP(String cep) {
-        if (cep == null) return false;
-        String cleanCEP = cep.replaceAll("[^0-9]", "");
-        return cleanCEP.length() == 8;
+    public static String sanitizeInput(String input) {
+        if (input == null) {
+            return "";
+        }
+
+        input = input.trim();
+
+        input = input.replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll("\"", "&quot;")
+                .replaceAll("'", "&#x27;")
+                .replaceAll("/", "&#x2F;");
+
+        return input;
+    }
+
+    public static boolean isValidAddressNumber(String number) {
+        if (number == null || number.trim().isEmpty()) {
+            return false;
+        }
+
+        number = number.trim();
+
+        Pattern numberPattern = Pattern.compile("^[0-9A-Za-z\\-]+$");
+        return numberPattern.matcher(number).matches() && number.length() <= 10;
+    }
+
+    public static boolean isValidEmail(String email) {
+        if (email == null || email.isEmpty()) {
+            return false;
+        }
+
+        email = email.trim().toLowerCase();
+
+        if (email.length() > 254) {
+            return false;
+        }
+
+        String emailPattern = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
+        return email.matches(emailPattern);
+    }
+
+    public static boolean isValidPhone(String phone) {
+        if (phone == null || phone.isEmpty()) {
+            return false;
+        }
+        String cleanPhone = phone.replaceAll("[^0-9]", "");
+        return cleanPhone.length() >= 10 && cleanPhone.length() <= 11;
     }
 
     public static boolean isValidCPF(String cpf) {
-        if (cpf == null) return false;
+        if (cpf == null || cpf.isEmpty()) {
+            return false;
+        }
 
-        // Remove caracteres não numéricos
         cpf = cpf.replaceAll("[^0-9]", "");
 
-        // Verifica se tem 11 dígitos
-        if (cpf.length() != 11) return false;
-
-        // Verifica se todos os dígitos são iguais
-        if (cpf.matches("(\\d)\\1{10}")) return false;
-
-        // Calcula o primeiro dígito verificador
-        int sum = 0;
-        for (int i = 0; i < 9; i++) {
-            sum += Character.getNumericValue(cpf.charAt(i)) * (10 - i);
+        if (cpf.length() != 11) {
+            return false;
         }
-        int firstDigit = 11 - (sum % 11);
-        if (firstDigit >= 10) firstDigit = 0;
 
-        // Verifica o primeiro dígito
-        if (Character.getNumericValue(cpf.charAt(9)) != firstDigit) return false;
-
-        // Calcula o segundo dígito verificador
-        sum = 0;
-        for (int i = 0; i < 10; i++) {
-            sum += Character.getNumericValue(cpf.charAt(i)) * (11 - i);
+        if (cpf.matches("(\\d)\\1{10}")) {
+            return false;
         }
-        int secondDigit = 11 - (sum % 11);
-        if (secondDigit >= 10) secondDigit = 0;
 
-        // Verifica o segundo dígito
-        return Character.getNumericValue(cpf.charAt(10)) == secondDigit;
+        try {
+            int soma = 0;
+            for (int i = 0; i < 9; i++) {
+                soma += Integer.parseInt(String.valueOf(cpf.charAt(i))) * (10 - i);
+            }
+            int primeiroDigito = 11 - (soma % 11);
+            if (primeiroDigito >= 10) primeiroDigito = 0;
+
+            soma = 0;
+            for (int i = 0; i < 10; i++) {
+                soma += Integer.parseInt(String.valueOf(cpf.charAt(i))) * (11 - i);
+            }
+            int segundoDigito = 11 - (soma % 11);
+            if (segundoDigito >= 10) segundoDigito = 0;
+
+            return cpf.charAt(9) == Character.forDigit(primeiroDigito, 10) &&
+                    cpf.charAt(10) == Character.forDigit(segundoDigito, 10);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public static boolean isValidCNPJ(String cnpj) {
-        if (cnpj == null) return false;
+        if (cnpj == null || cnpj.isEmpty()) {
+            return false;
+        }
 
-        // Remove caracteres não numéricos
         cnpj = cnpj.replaceAll("[^0-9]", "");
 
-        // Verifica se tem 14 dígitos
-        if (cnpj.length() != 14) return false;
-
-        // Verifica se todos os dígitos são iguais
-        if (cnpj.matches("(\\d)\\1{13}")) return false;
-
-        // Calcula o primeiro dígito verificador
-        int[] weight1 = {5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2};
-        int sum = 0;
-        for (int i = 0; i < 12; i++) {
-            sum += Character.getNumericValue(cnpj.charAt(i)) * weight1[i];
+        if (cnpj.length() != 14) {
+            return false;
         }
-        int firstDigit = sum % 11;
-        firstDigit = firstDigit < 2 ? 0 : 11 - firstDigit;
 
-        // Verifica o primeiro dígito
-        if (Character.getNumericValue(cnpj.charAt(12)) != firstDigit) return false;
-
-        // Calcula o segundo dígito verificador
-        int[] weight2 = {6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2};
-        sum = 0;
-        for (int i = 0; i < 13; i++) {
-            sum += Character.getNumericValue(cnpj.charAt(i)) * weight2[i];
+        if (cnpj.matches("(\\d)\\1{13}")) {
+            return false;
         }
-        int secondDigit = sum % 11;
-        secondDigit = secondDigit < 2 ? 0 : 11 - secondDigit;
 
-        // Verifica o segundo dígito
-        return Character.getNumericValue(cnpj.charAt(13)) == secondDigit;
+        try {
+            int[] pesos1 = {5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2};
+            int soma = 0;
+            for (int i = 0; i < 12; i++) {
+                soma += Integer.parseInt(String.valueOf(cnpj.charAt(i))) * pesos1[i];
+            }
+            int primeiroDigito = soma % 11 < 2 ? 0 : 11 - (soma % 11);
+
+            int[] pesos2 = {6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2};
+            soma = 0;
+            for (int i = 0; i < 13; i++) {
+                soma += Integer.parseInt(String.valueOf(cnpj.charAt(i))) * pesos2[i];
+            }
+            int segundoDigito = soma % 11 < 2 ? 0 : 11 - (soma % 11);
+
+            return cnpj.charAt(12) == Character.forDigit(primeiroDigito, 10) &&
+                    cnpj.charAt(13) == Character.forDigit(segundoDigito, 10);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
-    public static void buscarCEP(String cep, CEPCallback callback) {
-        new CEPTask(callback).execute(cep);
+    public static boolean isValidCEP(String cep) {
+        if (cep == null || cep.isEmpty()) {
+            return false;
+        }
+        String cleanCep = cep.replaceAll("[^0-9]", "");
+        return cleanCep.length() == 8;
     }
 
-    private static class CEPTask extends AsyncTask<String, Void, CEPResult> {
-        private CEPCallback callback;
+    public static void buscarCEP(String cep, CepCallback callback) {
+        String cleanCep = cep.replaceAll("[^0-9]", "");
 
-        public CEPTask(CEPCallback callback) {
-            this.callback = callback;
+        if (cleanCep.length() != 8) {
+            callback.onError("CEP inválido");
+            return;
         }
 
-        @Override
-        protected CEPResult doInBackground(String... params) {
-            String cepClean = params[0].replaceAll("[^0-9]", "");
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
 
-            // Tenta primeiro com ViaCEP (HTTPS)
-            CEPResult result = tryViaCEP(cepClean);
-            if (result.success) {
-                return result;
-            }
-
-            // Se falhar, tenta com API alternativa
-            result = tryAwesomeAPI(cepClean);
-            if (result.success) {
-                return result;
-            }
-
-            // Se ambas falharem, retorna erro
-            return new CEPResult(false, "Não foi possível buscar o CEP", null, null);
-        }
-
-        private CEPResult tryViaCEP(String cep) {
+        executor.execute(() -> {
             try {
-                String urlString = "https://viacep.com.br/ws/" + cep + "/json/";
-                URL url = new URL(urlString);
+                URL url = new URL("https://viacep.com.br/ws/" + cleanCep + "/json/");
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
-                connection.setConnectTimeout(10000);
-                connection.setReadTimeout(10000);
-                connection.setRequestProperty("User-Agent", "EasySpace-Android/1.0");
+                connection.setConnectTimeout(5000);
+                connection.setReadTimeout(5000);
 
                 int responseCode = connection.getResponseCode();
+
                 if (responseCode == HttpURLConnection.HTTP_OK) {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
                     StringBuilder response = new StringBuilder();
                     String line;
+
                     while ((line = reader.readLine()) != null) {
                         response.append(line);
                     }
                     reader.close();
-                    connection.disconnect();
 
-                    JSONObject json = new JSONObject(response.toString());
-                    if (!json.has("erro")) {
-                        String city = json.getString("localidade");
-                        String state = json.getString("uf");
-                        return new CEPResult(true, null, city, state);
+                    JSONObject jsonResponse = new JSONObject(response.toString());
+
+                    if (jsonResponse.has("erro")) {
+                        handler.post(() -> callback.onError("CEP não encontrado"));
+                    } else {
+                        String endereco = jsonResponse.optString("logradouro", "");
+                        String bairro = jsonResponse.optString("bairro", "");
+                        String cidade = jsonResponse.optString("localidade", "");
+                        String estado = jsonResponse.optString("uf", "");
+
+                        handler.post(() -> callback.onSuccess(endereco, bairro, cidade, estado));
                     }
+                } else {
+                    handler.post(() -> callback.onError("Erro ao buscar CEP"));
                 }
+
                 connection.disconnect();
             } catch (Exception e) {
-                e.printStackTrace();
+                handler.post(() -> callback.onError("Erro de conexão: " + e.getMessage()));
             }
-            return new CEPResult(false, "Erro ViaCEP", null, null);
-        }
-
-        private CEPResult tryAwesomeAPI(String cep) {
-            try {
-                String urlString = "https://cep.awesomeapi.com.br/json/" + cep;
-                URL url = new URL(urlString);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("GET");
-                connection.setConnectTimeout(10000);
-                connection.setReadTimeout(10000);
-                connection.setRequestProperty("User-Agent", "EasySpace-Android/1.0");
-
-                int responseCode = connection.getResponseCode();
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                    StringBuilder response = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        response.append(line);
-                    }
-                    reader.close();
-                    connection.disconnect();
-
-                    JSONObject json = new JSONObject(response.toString());
-                    if (json.has("city") && json.has("state")) {
-                        String city = json.getString("city");
-                        String state = json.getString("state");
-                        return new CEPResult(true, null, city, state);
-                    }
-                }
-                connection.disconnect();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return new CEPResult(false, "Erro API alternativa", null, null);
-        }
-
-        @Override
-        protected void onPostExecute(CEPResult result) {
-            if (result.success) {
-                callback.onSuccess(result.city, result.state);
-            } else {
-                callback.onError(result.error);
-            }
-        }
-    }
-
-    private static class CEPResult {
-        boolean success;
-        String error;
-        String city;
-        String state;
-
-        public CEPResult(boolean success, String error, String city, String state) {
-            this.success = success;
-            this.error = error;
-            this.city = city;
-            this.state = state;
-        }
+        });
     }
 }

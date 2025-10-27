@@ -1,44 +1,62 @@
 package com.example.easyspace;
 
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.easyspace.utils.FirebaseManager;
+import com.example.easyspace.utils.ValidationUtils;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.tasks.Task;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.button.MaterialButton;
+
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.easyspace.utils.UserManager;
-import com.example.easyspace.utils.ValidationUtils;
-import com.google.android.material.button.MaterialButton;
-import com.google.android.material.textfield.TextInputLayout;
-
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
 
 public class RegisterActivity extends AppCompatActivity {
-    private EditText editTextNome, editTextEmail, editTextSenha, editTextConfirmarSenha,
-            editTextTelefone, editTextDocumento, editTextCEP, editTextCidade, editTextEstado;
-    private RadioGroup radioGroupTipoUsuario;
 
-    private TextInputLayout textInputLayoutDocumento;
+    private EditText editTextNome, editTextEmail, editTextSenha, editTextConfirmarSenha,
+            editTextTelefone, editTextDocumento, editTextCEP, editTextCidade, editTextEstado,
+            editTextEndereco, editTextComplemento, editTextBairro, editTextDataNascimento;
+    private AutoCompleteTextView autoCompleteGenero;
+    private RadioGroup radioGroupTipoUsuario;
     private RadioButton radioButtonPessoaFisica, radioButtonPessoaJuridica;
     private MaterialButton buttonRegistrar, buttonGoogleRegister;
     private TextView textViewLogin;
     private ImageView imageViewClose;
-    private UserManager userManager;
+    private ProgressBar progressBar;
+    private BottomNavigationView bottomNavigationView;
+    private FirebaseManager firebaseManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
-        userManager = new UserManager(this);
+        firebaseManager = new FirebaseManager();
+        firebaseManager.configureGoogleSignIn(this);
+
         initViews();
         setupListeners();
+        setupBottomNavigation();
+        setupGeneroDropdown();
     }
 
     private void initViews() {
@@ -51,6 +69,11 @@ public class RegisterActivity extends AppCompatActivity {
         editTextCEP = findViewById(R.id.editTextCEP);
         editTextCidade = findViewById(R.id.editTextCidade);
         editTextEstado = findViewById(R.id.editTextEstado);
+        editTextEndereco = findViewById(R.id.editTextEndereco);
+        editTextComplemento = findViewById(R.id.editTextComplemento);
+        editTextBairro = findViewById(R.id.editTextBairro);
+        editTextDataNascimento = findViewById(R.id.editTextDataNascimento);
+        autoCompleteGenero = findViewById(R.id.autoCompleteGenero);
         radioGroupTipoUsuario = findViewById(R.id.radioGroupTipoUsuario);
         radioButtonPessoaFisica = findViewById(R.id.radioButtonPessoaFisica);
         radioButtonPessoaJuridica = findViewById(R.id.radioButtonPessoaJuridica);
@@ -58,8 +81,8 @@ public class RegisterActivity extends AppCompatActivity {
         buttonGoogleRegister = findViewById(R.id.buttonGoogleRegister);
         textViewLogin = findViewById(R.id.textViewLogin);
         imageViewClose = findViewById(R.id.imageViewClose);
-        textInputLayoutDocumento = findViewById(R.id.textInputLayoutDocumento);
-        editTextDocumento = findViewById(R.id.editTextDocumento);
+        progressBar = findViewById(R.id.progressBar);
+        bottomNavigationView = findViewById(R.id.bottomNavigation);
     }
 
     private void setupListeners() {
@@ -70,23 +93,17 @@ public class RegisterActivity extends AppCompatActivity {
             finish();
         });
 
-        buttonGoogleRegister.setOnClickListener(v -> {
-            Toast.makeText(this, "Registro com Google em desenvolvimento", Toast.LENGTH_SHORT).show();
-        });
+        buttonGoogleRegister.setOnClickListener(v -> signInWithGoogle());
 
         radioGroupTipoUsuario.setOnCheckedChangeListener((group, checkedId) -> {
-            editTextDocumento.setText("");
-            editTextDocumento.setError(null);
-            editTextDocumento.clearFocus();
-
             if (checkedId == R.id.radioButtonPessoaFisica) {
-                textInputLayoutDocumento.setHint("CPF");
                 editTextDocumento.setHint("CPF");
             } else {
-                textInputLayoutDocumento.setHint("CNPJ");
                 editTextDocumento.setHint("CNPJ");
             }
         });
+
+        editTextDataNascimento.setOnClickListener(v -> showDatePicker());
 
         editTextCEP.addTextChangedListener(new TextWatcher() {
             @Override
@@ -107,34 +124,128 @@ public class RegisterActivity extends AppCompatActivity {
         buttonRegistrar.setOnClickListener(v -> registrarUsuario());
     }
 
+    private void setupBottomNavigation() {
+        bottomNavigationView.setSelectedItemId(R.id.nav_profile);
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                startActivity(new Intent(this, MainActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_favorites) {
+                startActivity(new Intent(this, FavoritesActivity.class));
+                return true;
+            } else if (itemId == R.id.nav_messages) {
+                Toast.makeText(this, "Mensagens", Toast.LENGTH_SHORT).show();
+                return true;
+            } else if (itemId == R.id.nav_profile) {
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private void setupGeneroDropdown() {
+        String[] generos = {"Masculino", "Feminino", "Outro", "Prefiro não informar"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_dropdown_item_1line, generos);
+        autoCompleteGenero.setAdapter(adapter);
+    }
+
+    private void showDatePicker() {
+        Calendar calendar = Calendar.getInstance();
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+        DatePickerDialog datePickerDialog = new DatePickerDialog(this,
+                (view, selectedYear, selectedMonth, selectedDay) -> {
+                    String date = String.format("%02d/%02d/%04d", selectedDay, selectedMonth + 1, selectedYear);
+                    editTextDataNascimento.setText(date);
+                }, year, month, day);
+
+        datePickerDialog.getDatePicker().setMaxDate(System.currentTimeMillis());
+        datePickerDialog.show();
+    }
+
+    private void signInWithGoogle() {
+        Intent signInIntent = firebaseManager.getGoogleSignInClient().getSignInIntent();
+        startActivityForResult(signInIntent, 100);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == 100) {
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            progressBar.setVisibility(View.VISIBLE);
+
+            firebaseManager.signInWithGoogle(task, new FirebaseManager.AuthCallback() {
+                @Override
+                public void onSuccess(String userId) {
+                    progressBar.setVisibility(View.GONE);
+                    Toast.makeText(RegisterActivity.this, "Login com Google realizado!", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(RegisterActivity.this, MainActivity.class));
+                    finish();
+                }
+
+                @Override
+                public void onFailure(String error) {
+                    progressBar.setVisibility(View.GONE);
+                    Toast.makeText(RegisterActivity.this, error, Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+    }
+
     private void buscarCEP(String cep) {
-        ValidationUtils.buscarCEP(cep, new ValidationUtils.CEPCallback() {
+        ValidationUtils.buscarCEP(cep, new ValidationUtils.CepCallback() {
             @Override
-            public void onSuccess(String cidade, String estado) {
-                editTextCidade.setText(cidade);
-                editTextEstado.setText(estado);
+            public void onSuccess(String endereco, String bairro, String cidade, String estado) {
+                runOnUiThread(() -> {
+                    editTextEndereco.setText(endereco);
+                    editTextCidade.setText(cidade);
+                    editTextEstado.setText(estado);
+                    progressBar.setVisibility(View.GONE);
+                });
             }
 
             @Override
             public void onError(String message) {
-                Toast.makeText(RegisterActivity.this, "Erro ao buscar CEP: " + message, Toast.LENGTH_SHORT).show();
+                runOnUiThread(() -> {
+                    Toast.makeText(RegisterActivity.this, message, Toast.LENGTH_SHORT).show();
+                    progressBar.setVisibility(View.GONE);
+                });
             }
         });
+
     }
 
     private void registrarUsuario() {
-        String nome = editTextNome.getText().toString().trim();
-        String email = editTextEmail.getText().toString().trim();
+        String nome = ValidationUtils.sanitizeInput(editTextNome.getText().toString().trim());
+        String email = ValidationUtils.sanitizeInput(editTextEmail.getText().toString().trim().toLowerCase());
         String senha = editTextSenha.getText().toString();
         String confirmarSenha = editTextConfirmarSenha.getText().toString();
-        String telefone = editTextTelefone.getText().toString().trim();
-        String documento = editTextDocumento.getText().toString().trim();
-        String cep = editTextCEP.getText().toString().trim();
-        String cidade = editTextCidade.getText().toString().trim();
-        String estado = editTextEstado.getText().toString().trim();
+        String telefone = ValidationUtils.sanitizeInput(editTextTelefone.getText().toString().trim());
+        String documento = ValidationUtils.sanitizeInput(editTextDocumento.getText().toString().trim());
+        String cep = ValidationUtils.sanitizeInput(editTextCEP.getText().toString().trim());
+        String cidade = ValidationUtils.sanitizeInput(editTextCidade.getText().toString().trim());
+        String estado = ValidationUtils.sanitizeInput(editTextEstado.getText().toString().trim());
+        String endereco = ValidationUtils.sanitizeInput(editTextEndereco.getText().toString().trim());
+        String complemento = ValidationUtils.sanitizeInput(editTextComplemento.getText().toString().trim());
+        String bairro = ValidationUtils.sanitizeInput(editTextBairro.getText().toString().trim());
+        String dataNascimento = ValidationUtils.sanitizeInput(editTextDataNascimento.getText().toString().trim());
+        String genero = ValidationUtils.sanitizeInput(autoCompleteGenero.getText().toString().trim());
 
         if (nome.isEmpty()) {
             editTextNome.setError("Nome é obrigatório");
+            editTextNome.requestFocus();
+            return;
+        }
+
+        if (!ValidationUtils.isValidName(nome)) {
+            editTextNome.setError("Nome inválido. Use apenas letras, espaços e hífens");
             editTextNome.requestFocus();
             return;
         }
@@ -157,8 +268,9 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        if (senha.length() < 6) {
-            editTextSenha.setError("Senha deve ter pelo menos 6 caracteres");
+        ValidationUtils.PasswordStrength passwordStrength = ValidationUtils.validatePasswordStrength(senha);
+        if (!passwordStrength.isValid) {
+            editTextSenha.setError(passwordStrength.message);
             editTextSenha.requestFocus();
             return;
         }
@@ -176,7 +288,7 @@ public class RegisterActivity extends AppCompatActivity {
         }
 
         if (!ValidationUtils.isValidPhone(telefone)) {
-            editTextTelefone.setError("Telefone inválido. Use formato: (11) 99999-9999");
+            editTextTelefone.setError("Telefone inválido");
             editTextTelefone.requestFocus();
             return;
         }
@@ -212,6 +324,18 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
+        if (endereco.isEmpty()) {
+            editTextEndereco.setError("Endereço é obrigatório");
+            editTextEndereco.requestFocus();
+            return;
+        }
+
+        if (bairro.isEmpty()) {
+            editTextBairro.setError("Bairro é obrigatório");
+            editTextBairro.requestFocus();
+            return;
+        }
+
         if (cidade.isEmpty()) {
             editTextCidade.setError("Cidade é obrigatória");
             editTextCidade.requestFocus();
@@ -224,20 +348,46 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        if (userManager.emailExists(email)) {
-            editTextEmail.setError("Este email já está cadastrado");
-            editTextEmail.requestFocus();
+        if (dataNascimento.isEmpty()) {
+            editTextDataNascimento.setError("Data de nascimento é obrigatória");
+            editTextDataNascimento.requestFocus();
             return;
         }
 
-        boolean success = userManager.registerUser(nome, email, senha, telefone, documento, cep, cidade, estado, isPessoaFisica);
-
-        if (success) {
-            Toast.makeText(this, "Usuário registrado com sucesso!", Toast.LENGTH_SHORT).show();
-            startActivity(new Intent(this, MainActivity.class));
-            finish();
-        } else {
-            Toast.makeText(this, "Erro ao registrar usuário", Toast.LENGTH_SHORT).show();
+        if (genero.isEmpty()) {
+            autoCompleteGenero.setError("Gênero é obrigatório");
+            autoCompleteGenero.requestFocus();
+            return;
         }
+
+        progressBar.setVisibility(View.VISIBLE);
+        buttonRegistrar.setEnabled(false);
+
+        firebaseManager.registerUser(nome, email, senha, telefone, documento, cep, cidade, estado,
+                isPessoaFisica, endereco, complemento, bairro, dataNascimento, genero,
+                new FirebaseManager.AuthCallback() {
+                    @Override
+                    public void onSuccess(String userId) {
+                        progressBar.setVisibility(View.GONE);
+                        Toast.makeText(RegisterActivity.this, "Usuário registrado com sucesso!", Toast.LENGTH_SHORT).show();
+                        startActivity(new Intent(RegisterActivity.this, MainActivity.class));
+                        finish();
+                    }
+
+                    @Override
+                    public void onFailure(String error) {
+                        progressBar.setVisibility(View.GONE);
+                        buttonRegistrar.setEnabled(true);
+
+                        String errorMessage = "Erro ao registrar. Tente novamente";
+                        if (error.contains("email address is already in use")) {
+                            errorMessage = "Este email já está cadastrado";
+                        } else if (error.contains("network")) {
+                            errorMessage = "Erro de conexão. Verifique sua internet";
+                        }
+
+                        Toast.makeText(RegisterActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+                    }
+                });
     }
 }
