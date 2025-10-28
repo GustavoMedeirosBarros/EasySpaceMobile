@@ -94,19 +94,23 @@ public class ProfileActivity extends AppCompatActivity {
         });
 
         menuMyListings.setOnClickListener(v -> {
-            Toast.makeText(this, "Ver meus anúncios", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, MeusAnunciosActivity.class));
         });
 
         menuFavorites.setOnClickListener(v -> {
             startActivity(new Intent(this, FavoritesActivity.class));
         });
 
+        textViewReservasCount.setOnClickListener(v -> {
+            startActivity(new Intent(this, MinhasReservasActivity.class));
+        });
+
         menuNotifications.setOnClickListener(v -> {
-            Toast.makeText(this, "Configurar notificações", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, NotificationsActivity.class));
         });
 
         menuSettings.setOnClickListener(v -> {
-            Toast.makeText(this, "Abrir configurações", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, SettingsActivity.class));
         });
 
         menuHelp.setOnClickListener(v -> {

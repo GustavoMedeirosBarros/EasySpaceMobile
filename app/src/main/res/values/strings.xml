@@ -77,4 +77,23 @@
     <string name="loading">Carregando...</string>
     <string name="error">Erro</string>
     <string name="success">Sucesso</string>
+
+    <!-- Added new strings for new features -->
+    <string name="my_listings">Meus Anúncios</string>
+    <string name="my_reservations">Minhas Reservas</string>
+    <string name="notifications">Notificações</string>
+    <string name="settings">Configurações</string>
+    <string name="no_listings">Você ainda não tem anúncios</string>
+    <string name="no_reservations">Você ainda não tem reservas</string>
+    <string name="generate_sample_data">Gerar Dados de Exemplo</string>
+    <string name="no_notifications">Nenhuma notificação</string>
+    <string name="all_reservations">Todas</string>
+    <string name="pending_reservations">Pendentes</string>
+    <string name="confirmed_reservations">Confirmadas</string>
+    <string name="completed_reservations">Concluídas</string>
+
+    <string name="developer_options">Opções de Desenvolvedor (Temporário)</string>
+    <string name="generate_sample_data_title">Gerar Dados de Exemplo</string>
+    <string name="generate_sample_data_description">Cria múltiplos locais de exemplo com imagens representativas no banco de dados para testes.</string>
+    <string name="generate_sample_data_warning">⚠️ Esta seção será removida na versão final</string>
 </resources>

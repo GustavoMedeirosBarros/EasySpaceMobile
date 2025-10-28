@@ -13,6 +13,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.example.easyspace.LocalDetailActivity;
 import com.example.easyspace.R;
 import com.example.easyspace.models.Local;
@@ -76,13 +78,25 @@ public class LocalAdapter extends RecyclerView.Adapter<LocalAdapter.LocalViewHol
         holder.textViewCategoria.setText(local.getCategoria());
 
         if (local.getImageUrl() != null && !local.getImageUrl().isEmpty()) {
-            try {
-                byte[] decodedString = android.util.Base64.decode(local.getImageUrl(), android.util.Base64.DEFAULT);
-                android.graphics.Bitmap decodedByte = android.graphics.BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-                holder.imageViewLocal.setImageBitmap(decodedByte);
-            } catch (Exception e) {
-                e.printStackTrace();
-                holder.imageViewLocal.setImageResource(R.drawable.ic_default_space);
+            String imageUrl = local.getImageUrl();
+
+            if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+                Glide.with(context)
+                        .load(imageUrl)
+                        .placeholder(R.drawable.ic_default_space)
+                        .error(R.drawable.ic_default_space)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .centerCrop()
+                        .into(holder.imageViewLocal);
+            } else {
+                try {
+                    byte[] decodedString = android.util.Base64.decode(imageUrl, android.util.Base64.DEFAULT);
+                    android.graphics.Bitmap decodedByte = android.graphics.BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                    holder.imageViewLocal.setImageBitmap(decodedByte);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    holder.imageViewLocal.setImageResource(R.drawable.ic_default_space);
+                }
             }
         } else {
             holder.imageViewLocal.setImageResource(R.drawable.ic_default_space);

@@ -20,8 +20,18 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.EasySpace">
-
-        <!-- Added Google Maps API key meta-data -->
+        <activity
+            android:name=".MinhasReservasActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".NotificationsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MeusAnunciosActivity"
+            android:exported="false" /> <!-- Added Google Maps API key meta-data -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyCg1WweiI1Cm6ENJKnaB0tBR7FfTdzvLYM" />
