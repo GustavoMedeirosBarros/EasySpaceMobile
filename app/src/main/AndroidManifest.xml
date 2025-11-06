@@ -21,6 +21,30 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.EasySpace">
         <activity
+            android:name=".ThemeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PrivacySettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MessagesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".LanguageActivity"
+            android:exported="false" />
+        <activity
+            android:name=".HelpActivity"
+            android:exported="false" />
+        <activity
+            android:name=".EditProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ChangePasswordActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AboutActivity"
+            android:exported="false" />
+        <activity
             android:name=".MinhasReservasActivity"
             android:exported="false" />
         <activity
@@ -31,7 +55,8 @@
             android:exported="false" />
         <activity
             android:name=".MeusAnunciosActivity"
-            android:exported="false" /> <!-- Added Google Maps API key meta-data -->
+            android:exported="false" />
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyCg1WweiI1Cm6ENJKnaB0tBR7FfTdzvLYM" />

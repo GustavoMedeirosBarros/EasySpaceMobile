@@ -1,5 +1,6 @@
 package com.example.easyspace;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -62,22 +63,22 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void setupListeners() {
         menuEditProfile.setOnClickListener(v ->
-                Toast.makeText(this, "Editar perfil", Toast.LENGTH_SHORT).show());
+                startActivity(new Intent(this, EditProfileActivity.class)));
 
         menuChangePassword.setOnClickListener(v ->
-                Toast.makeText(this, "Alterar senha", Toast.LENGTH_SHORT).show());
+                startActivity(new Intent(this, ChangePasswordActivity.class)));
 
         menuPrivacy.setOnClickListener(v ->
-                Toast.makeText(this, "Configurações de privacidade", Toast.LENGTH_SHORT).show());
+                startActivity(new Intent(this, PrivacySettingsActivity.class)));
 
         menuLanguage.setOnClickListener(v ->
-                Toast.makeText(this, "Selecionar idioma", Toast.LENGTH_SHORT).show());
+                startActivity(new Intent(this, LanguageActivity.class)));
 
         menuTheme.setOnClickListener(v ->
-                Toast.makeText(this, "Alterar tema", Toast.LENGTH_SHORT).show());
+                startActivity(new Intent(this, ThemeActivity.class)));
 
         menuAbout.setOnClickListener(v ->
-                Toast.makeText(this, "Sobre o EasySpace v1.0", Toast.LENGTH_SHORT).show());
+                startActivity(new Intent(this, AboutActivity.class)));
 
         switchNotifications.setOnCheckedChangeListener((buttonView, isChecked) ->
                 Toast.makeText(this, "Notificações " + (isChecked ? "ativadas" : "desativadas"),

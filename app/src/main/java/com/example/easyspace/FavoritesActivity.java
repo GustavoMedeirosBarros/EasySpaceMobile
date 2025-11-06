@@ -78,7 +78,7 @@ public class FavoritesActivity extends AppCompatActivity {
             } else if (itemId == R.id.nav_favorites) {
                 return true;
             } else if (itemId == R.id.nav_messages) {
-                Toast.makeText(this, "Mensagens em desenvolvimento", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(this, MessagesActivity.class));
                 return true;
             } else if (itemId == R.id.nav_profile) {
                 if (firebaseManager.isLoggedIn()) {

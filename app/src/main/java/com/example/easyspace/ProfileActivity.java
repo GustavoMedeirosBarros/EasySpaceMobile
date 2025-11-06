@@ -75,6 +75,9 @@ public class ProfileActivity extends AppCompatActivity {
             } else if (itemId == R.id.nav_favorites) {
                 startActivity(new Intent(this, FavoritesActivity.class));
                 return true;
+            } else if (itemId == R.id.nav_messages) {
+                startActivity(new Intent(this, MessagesActivity.class));
+                return true;
             } else if (itemId == R.id.nav_profile) {
                 return true;
             }
@@ -86,11 +89,11 @@ public class ProfileActivity extends AppCompatActivity {
         });
 
         menuPersonalInfo.setOnClickListener(v -> {
-            Toast.makeText(this, "Editar informações pessoais", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, EditProfileActivity.class));
         });
 
         menuLocation.setOnClickListener(v -> {
-            Toast.makeText(this, "Editar localização", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, EditProfileActivity.class));
         });
 
         menuMyListings.setOnClickListener(v -> {
@@ -114,7 +117,7 @@ public class ProfileActivity extends AppCompatActivity {
         });
 
         menuHelp.setOnClickListener(v -> {
-            Toast.makeText(this, "Central de ajuda", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, HelpActivity.class));
         });
 
         buttonLogout.setOnClickListener(v -> {
