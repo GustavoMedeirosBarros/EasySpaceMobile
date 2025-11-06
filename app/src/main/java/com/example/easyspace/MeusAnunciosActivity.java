@@ -3,57 +3,59 @@ package com.example.easyspace;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
-
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.easyspace.adapters.LocalAdapter;
+import com.example.easyspace.adapters.MeusAnunciosAdapter; // Import o novo adapter
 import com.example.easyspace.models.Local;
 import com.example.easyspace.utils.FirebaseManager;
-import com.example.easyspace.utils.SampleDataGenerator;
 import com.google.android.material.appbar.MaterialToolbar;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-
+import com.google.android.material.button.MaterialButton; // Import correto do MaterialButton
 import java.util.ArrayList;
 import java.util.List;
 
 public class MeusAnunciosActivity extends AppCompatActivity {
 
-    private MaterialToolbar toolbar;
-    private RecyclerView recyclerViewAnuncios;
-    private ProgressBar progressBar;
-    private TextView textViewEmptyState;
-    private Button buttonGenerateSamples;
-    private LocalAdapter adapter;
+    private RecyclerView recyclerView;
+    private MeusAnunciosAdapter adapter; // Usar o novo adapter
+    private List<Local> localList;
     private FirebaseManager firebaseManager;
-    private FirebaseFirestore db;
+    private ProgressBar progressBar;
+    private LinearLayout layoutEmptyState;
+    private MaterialButton buttonNovoAnuncio;
+    private MaterialToolbar toolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_meus_anuncios);
+        setContentView(R.layout.activity_meus_anuncios); // Usa o novo layout
 
         firebaseManager = new FirebaseManager();
-        db = FirebaseFirestore.getInstance();
+        localList = new ArrayList<>();
 
         initViews();
         setupToolbar();
         setupRecyclerView();
-        loadUserListings();
+        setupListeners();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadAnuncios();
     }
 
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
-        recyclerViewAnuncios = findViewById(R.id.recyclerViewAnuncios);
+        recyclerView = findViewById(R.id.recyclerViewMeusAnuncios);
         progressBar = findViewById(R.id.progressBar);
-        textViewEmptyState = findViewById(R.id.textViewEmptyState);
-        buttonGenerateSamples = findViewById(R.id.buttonGenerateSamples);
+        layoutEmptyState = findViewById(R.id.layoutEmptyState);
+        buttonNovoAnuncio = findViewById(R.id.buttonNovoAnuncio);
     }
 
     private void setupToolbar() {
@@ -66,96 +68,105 @@ public class MeusAnunciosActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        recyclerViewAnuncios.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new LocalAdapter(this, new ArrayList<>());
-        recyclerViewAnuncios.setAdapter(adapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        buttonGenerateSamples.setOnClickListener(v -> generateSampleData());
-    }
-
-    private void generateSampleData() {
-        progressBar.setVisibility(View.VISIBLE);
-        buttonGenerateSamples.setEnabled(false);
-        textViewEmptyState.setVisibility(View.GONE);
-        TextView textViewEmptySubtitle = findViewById(R.id.textViewEmptySubtitle);
-        textViewEmptySubtitle.setVisibility(View.GONE);
-
-        SampleDataGenerator.generateAndSaveSampleData(new SampleDataGenerator.GenerateCallback() {
+        // Configura os cliques do adapter
+        MeusAnunciosAdapter.OnItemClickListener listener = new MeusAnunciosAdapter.OnItemClickListener() {
             @Override
-            public void onSuccess(int count) {
-                progressBar.setVisibility(View.GONE);
-                buttonGenerateSamples.setVisibility(View.GONE);
-                Toast.makeText(MeusAnunciosActivity.this,
-                        count + " locais de exemplo criados com sucesso!", Toast.LENGTH_LONG).show();
-                loadUserListings();
+            public void onItemClick(Local local) {
+                Intent intent = new Intent(MeusAnunciosActivity.this, LocalDetailActivity.class);
+                intent.putExtra("local", local); // Passa o objeto local
+                startActivity(intent);
             }
 
             @Override
-            public void onError(String message) {
+            public void onEditClick(Local local) {
+                // Lógica para editar (precisa da Activity CriarAnuncio)
+                Intent intent = new Intent(MeusAnunciosActivity.this, CriarAnuncioActivity.class);
+                intent.putExtra("localIdToEdit", local.getId()); // Passa o ID para edição
+                startActivity(intent);
+            }
+
+            @Override
+            public void onDeleteClick(Local local) {
+                showDeleteConfirmation(local);
+            }
+        };
+
+        adapter = new MeusAnunciosAdapter(this, localList, listener);
+        recyclerView.setAdapter(adapter);
+    }
+
+    private void setupListeners() {
+        buttonNovoAnuncio.setOnClickListener(v ->
+                startActivity(new Intent(this, CriarAnuncioActivity.class)));
+    }
+
+    private void loadAnuncios() {
+        progressBar.setVisibility(View.VISIBLE);
+        String userId = firebaseManager.getCurrentUserId();
+        if (userId == null) {
+            progressBar.setVisibility(View.GONE);
+            Toast.makeText(this, "Usuário não logado", Toast.LENGTH_SHORT).show();
+            checkEmptyState();
+            return;
+        }
+
+        // Usa o método correto que foi criado no FirebaseManager
+        firebaseManager.getLocaisByUserId(userId, new FirebaseManager.LocaisCallback() {
+            @Override
+            public void onSuccess(List<Local> locais) {
                 progressBar.setVisibility(View.GONE);
-                buttonGenerateSamples.setEnabled(true);
-                textViewEmptyState.setVisibility(View.VISIBLE);
-                textViewEmptySubtitle.setVisibility(View.VISIBLE);
-                Toast.makeText(MeusAnunciosActivity.this,
-                        "Erro ao gerar dados: " + message, Toast.LENGTH_LONG).show();
+                localList.clear();
+                localList.addAll(locais);
+                adapter.updateData(locais); // Atualiza o adapter
+                checkEmptyState();
+            }
+
+            @Override
+            public void onFailure(String error) {
+                progressBar.setVisibility(View.GONE);
+                Toast.makeText(MeusAnunciosActivity.this, "Erro ao carregar anúncios", Toast.LENGTH_SHORT).show();
+                checkEmptyState();
             }
         });
     }
 
-    private void loadUserListings() {
-        String userId = firebaseManager.getCurrentUserId();
-        if (userId == null) {
-            textViewEmptyState.setVisibility(View.VISIBLE);
-            textViewEmptyState.setText("Faça login para ver seus anúncios");
-            TextView textViewEmptySubtitle = findViewById(R.id.textViewEmptySubtitle);
-            textViewEmptySubtitle.setVisibility(View.GONE);
-            return;
+    private void checkEmptyState() {
+        if (localList.isEmpty()) {
+            layoutEmptyState.setVisibility(View.VISIBLE);
+            recyclerView.setVisibility(View.GONE);
+        } else {
+            layoutEmptyState.setVisibility(View.GONE);
+            recyclerView.setVisibility(View.VISIBLE);
         }
-
-        progressBar.setVisibility(View.VISIBLE);
-
-        db.collection("locais")
-                .whereEqualTo("proprietarioId", userId)
-                .get()
-                .addOnCompleteListener(task -> {
-                    progressBar.setVisibility(View.GONE);
-
-                    if (task.isSuccessful()) {
-                        List<Local> userLocations = new ArrayList<>();
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            Local local = document.toObject(Local.class);
-                            if (local.getId() == null) {
-                                local.setId(document.getId());
-                            }
-                            userLocations.add(local);
-                        }
-
-                        TextView textViewEmptySubtitle = findViewById(R.id.textViewEmptySubtitle);
-
-                        if (userLocations.isEmpty()) {
-                            textViewEmptyState.setVisibility(View.VISIBLE);
-                            textViewEmptySubtitle.setVisibility(View.VISIBLE);
-                            buttonGenerateSamples.setVisibility(View.VISIBLE);
-                            recyclerViewAnuncios.setVisibility(View.GONE);
-                        } else {
-                            textViewEmptyState.setVisibility(View.GONE);
-                            textViewEmptySubtitle.setVisibility(View.GONE);
-                            buttonGenerateSamples.setVisibility(View.GONE);
-                            recyclerViewAnuncios.setVisibility(View.VISIBLE);
-                            adapter.updateData(userLocations);
-                        }
-                    } else {
-                        textViewEmptyState.setVisibility(View.VISIBLE);
-                        textViewEmptyState.setText("Erro ao carregar anúncios");
-                        TextView textViewEmptySubtitle = findViewById(R.id.textViewEmptySubtitle);
-                        textViewEmptySubtitle.setVisibility(View.GONE);
-                    }
-                });
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        loadUserListings();
+    private void showDeleteConfirmation(Local local) {
+        new AlertDialog.Builder(this)
+                .setTitle("Excluir Anúncio")
+                .setMessage("Tem certeza que deseja excluir o anúncio \"" + local.getNome() + "\"? Esta ação não pode ser desfeita.")
+                .setPositiveButton("Excluir", (dialog, which) -> deleteLocal(local))
+                .setNegativeButton("Cancelar", null)
+                .show();
+    }
+
+    private void deleteLocal(Local local) {
+        progressBar.setVisibility(View.VISIBLE);
+        // Usa o método correto do FirebaseManager
+        firebaseManager.deleteLocal(local.getId(), new FirebaseManager.TaskCallback() {
+            @Override
+            public void onSuccess() {
+                progressBar.setVisibility(View.GONE);
+                Toast.makeText(MeusAnunciosActivity.this, "Anúncio excluído", Toast.LENGTH_SHORT).show();
+                loadAnuncios(); // Recarrega a lista
+            }
+
+            @Override
+            public void onFailure(String error) {
+                progressBar.setVisibility(View.GONE);
+                Toast.makeText(MeusAnunciosActivity.this, "Erro ao excluir: " + error, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

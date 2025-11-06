@@ -11,6 +11,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.bumptech.glide.Glide; // Importar o Glide
+import com.example.easyspace.models.Usuario; // Importar o modelo Usuario
 import com.example.easyspace.utils.FirebaseManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
@@ -39,7 +41,20 @@ public class ProfileActivity extends AppCompatActivity {
         firebaseManager = new FirebaseManager();
         initViews();
         setupListeners();
-        loadUserData();
+        // O loadUserData() é chamado no onResume() para atualizar ao voltar
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        bottomNavigation.setSelectedItemId(R.id.nav_profile);
+        if (firebaseManager.isLoggedIn()) {
+            loadUserData();
+        } else {
+            // Se não estiver logado por algum motivo, vai para o Login
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+        }
     }
 
     private void initViews() {
@@ -66,7 +81,6 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        bottomNavigation.setSelectedItemId(R.id.nav_profile);
         bottomNavigation.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
@@ -124,43 +138,63 @@ public class ProfileActivity extends AppCompatActivity {
             firebaseManager.logout();
             Toast.makeText(this, "Logout realizado com sucesso", Toast.LENGTH_SHORT).show();
             startActivity(new Intent(this, MainActivity.class));
-            finish();
+            finishAffinity(); // Limpa todas as activities
         });
     }
 
     private void loadUserData() {
         progressBar.setVisibility(View.VISIBLE);
+        String userId = firebaseManager.getCurrentUserId();
 
-        firebaseManager.getCurrentUserData(new FirebaseManager.UserDataCallback() {
+        if (userId == null) {
+            progressBar.setVisibility(View.GONE);
+            // Isso não deve acontecer se a verificação no onResume() estiver correta
+            return;
+        }
+
+        // 1. Carregar dados básicos do usuário
+        firebaseManager.getUserData(userId, new FirebaseManager.UserCallback() {
             @Override
-            public void onSuccess(Map<String, Object> userData) {
+            public void onSuccess(Usuario usuario) {
                 progressBar.setVisibility(View.GONE);
 
-                String nome = (String) userData.get("nome");
-                String email = (String) userData.get("email");
-                String telefone = (String) userData.get("telefone");
-                String cidade = (String) userData.get("cidade");
-                String estado = (String) userData.get("estado");
+                String nome = usuario.getNome();
+                String email = usuario.getEmail();
+                String telefone = usuario.getTelefone();
+                String cidade = usuario.getCidade();
+                String estado = usuario.getEstado();
+                String fotoUrl = usuario.getFotoUrl();
 
                 textViewNome.setText(nome != null ? nome : "Usuário");
                 textViewEmail.setText(email != null ? email : "");
-                textViewTelefone.setText(telefone != null ? telefone : "Não informado");
+                textViewTelefone.setText(telefone != null && !telefone.isEmpty() ? telefone : "Não informado");
 
-                if (cidade != null && estado != null) {
+                if (cidade != null && !cidade.isEmpty() && estado != null && !estado.isEmpty()) {
                     textViewEndereco.setText(cidade + ", " + estado);
                 } else {
                     textViewEndereco.setText("Não informado");
                 }
 
-                if (nome != null && !nome.isEmpty()) {
-                    String[] partes = nome.split(" ");
-                    String iniciais;
-                    if (partes.length > 1) {
-                        iniciais = String.valueOf(partes[0].charAt(0)) + String.valueOf(partes[1].charAt(0));
+                // Lógica para Iniciais ou Foto de Perfil
+                if (fotoUrl != null && !fotoUrl.isEmpty()) {
+                    textViewIniciais.setVisibility(View.GONE);
+                    imageViewFotoPerfil.setVisibility(View.VISIBLE);
+                    Glide.with(ProfileActivity.this).load(fotoUrl).circleCrop().into(imageViewFotoPerfil);
+                } else {
+                    imageViewFotoPerfil.setVisibility(View.GONE);
+                    textViewIniciais.setVisibility(View.VISIBLE);
+                    if (nome != null && !nome.isEmpty()) {
+                        String[] partes = nome.split(" ");
+                        String iniciais;
+                        if (partes.length > 1) {
+                            iniciais = String.valueOf(partes[0].charAt(0)) + String.valueOf(partes[partes.length - 1].charAt(0));
+                        } else {
+                            iniciais = String.valueOf(nome.charAt(0));
+                        }
+                        textViewIniciais.setText(iniciais.toUpperCase());
                     } else {
-                        iniciais = String.valueOf(nome.charAt(0));
+                        textViewIniciais.setText("?");
                     }
-                    textViewIniciais.setText(iniciais.toUpperCase());
                 }
             }
 
@@ -170,5 +204,34 @@ public class ProfileActivity extends AppCompatActivity {
                 Toast.makeText(ProfileActivity.this, "Erro ao carregar dados: " + error, Toast.LENGTH_SHORT).show();
             }
         });
+
+        // 2. Carregar contagem de anúncios
+        firebaseManager.getUserListingCount(userId, new FirebaseManager.CountCallback() {
+            @Override
+            public void onSuccess(int count) {
+                textViewAnunciosCount.setText(String.valueOf(count));
+            }
+
+            @Override
+            public void onFailure(String error) {
+                textViewAnunciosCount.setText("0");
+            }
+        });
+
+        // 3. Carregar contagem de reservas
+        firebaseManager.getUserReservationCount(userId, new FirebaseManager.CountCallback() {
+            @Override
+            public void onSuccess(int count) {
+                textViewReservasCount.setText(String.valueOf(count));
+            }
+
+            @Override
+            public void onFailure(String error) {
+                textViewReservasCount.setText("0");
+            }
+        });
+
+        // 4. Contagem de avaliações (ainda não implementada no backend)
+        textViewAvaliacoesCount.setText("0");
     }
 }

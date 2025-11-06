@@ -1,11 +1,11 @@
 package com.example.easyspace.utils;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
+import android.util.Log;
 
 import com.example.easyspace.R;
 import com.example.easyspace.models.Local;
+import com.example.easyspace.models.Notification; // Importe o modelo Notification
 import com.example.easyspace.models.Usuario;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -20,9 +20,10 @@ import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,19 +33,20 @@ public class FirebaseManager {
     private FirebaseFirestore db;
     private GoogleSignInClient googleSignInClient;
 
-    public FirebaseManager() {
-        auth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
-    }
-
+    // --- INTERFACES DE CALLBACK ---
     public interface AuthCallback {
         void onSuccess(String userId);
         void onFailure(String error);
     }
 
     public interface LocalCallback {
-        void onSuccess();
-        void onError(String mensagem);
+        void onSuccess(Local local);
+        void onFailure(String error);
+    }
+
+    public interface LocaisCallback {
+        void onSuccess(List<Local> locais);
+        void onFailure(String error);
     }
 
     public interface UserCallback {
@@ -62,6 +64,11 @@ public class FirebaseManager {
         void onFailure(String error);
     }
 
+    public interface TaskCallback {
+        void onSuccess();
+        void onFailure(String error);
+    }
+
     public interface ProfileCompleteCallback {
         void onResult(boolean isComplete);
     }
@@ -74,6 +81,25 @@ public class FirebaseManager {
     public interface FavoriteStatusCallback {
         void onResult(boolean isFavorite);
     }
+
+    public interface CountCallback {
+        void onSuccess(int count);
+        void onFailure(String error);
+    }
+
+    public interface NotificationsCallback {
+        void onSuccess(List<Notification> notifications);
+        void onFailure(String error);
+    }
+
+    // --- CONSTRUTOR ---
+
+    public FirebaseManager() {
+        auth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+    }
+
+    // --- MÉTODOS DE AUTENTICAÇÃO E PERFIL ---
 
     public void configureGoogleSignIn(Context context) {
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -244,26 +270,6 @@ public class FirebaseManager {
                 });
     }
 
-    public void salvarLocal(Local local, LocalCallback callback) {
-        FirebaseUser user = auth.getCurrentUser();
-        if (user == null) {
-            callback.onError("Usuário não autenticado");
-            return;
-        }
-
-        local.setProprietarioId(user.getUid());
-
-        db.collection("locais")
-                .add(local)
-                .addOnSuccessListener(documentReference -> {
-                    local.setId(documentReference.getId());
-                    documentReference.update("id", documentReference.getId())
-                            .addOnSuccessListener(aVoid -> callback.onSuccess())
-                            .addOnFailureListener(e -> callback.onError(e.getMessage()));
-                })
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
-    }
-
     public void updateUserProfile(String userId, Usuario usuario, AuthCallback callback) {
         db.collection("usuarios").document(userId)
                 .set(usuario)
@@ -295,6 +301,8 @@ public class FirebaseManager {
                     }
                 });
     }
+
+    // --- MÉTODOS DE FAVORITOS ---
 
     public void addToFavorites(String localId, UpdateCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
@@ -397,6 +405,144 @@ public class FirebaseManager {
                 });
     }
 
+    // --- MÉTODOS DE LOCAIS (ANÚNCIOS) ---
+
+    public void salvarLocal(Local local, TaskCallback callback) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            callback.onFailure("Usuário não autenticado");
+            return;
+        }
+
+        local.setProprietarioId(user.getUid());
+
+        db.collection("locais")
+                .add(local)
+                .addOnSuccessListener(documentReference -> {
+                    local.setId(documentReference.getId());
+                    documentReference.update("id", documentReference.getId())
+                            .addOnSuccessListener(aVoid -> callback.onSuccess())
+                            .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+                })
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    public void getLocalById(String localId, LocalCallback callback) {
+        db.collection("locais").document(localId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        Local local = documentSnapshot.toObject(Local.class);
+                        callback.onSuccess(local);
+                    } else {
+                        callback.onFailure("Local não encontrado");
+                    }
+                })
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    public void getLocaisByUserId(String userId, LocaisCallback callback) {
+        db.collection("locais")
+                .whereEqualTo("proprietarioId", userId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Local> locais = new ArrayList<>();
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        Local local = document.toObject(Local.class);
+                        locais.add(local);
+                    }
+                    callback.onSuccess(locais);
+                })
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    public void deleteLocal(String localId, TaskCallback callback) {
+        db.collection("locais").document(localId)
+                .delete()
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    // --- MÉTODOS DE CONTAGEM (PERFIL) ---
+
+    public void getUserListingCount(String userId, CountCallback callback) {
+        db.collection("locais")
+                .whereEqualTo("proprietarioId", userId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    callback.onSuccess(queryDocumentSnapshots.size());
+                })
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    public void getUserReservationCount(String userId, CountCallback callback) {
+        db.collection("reservas")
+                .whereEqualTo("usuarioId", userId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    callback.onSuccess(queryDocumentSnapshots.size());
+                })
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    // --- MÉTODOS DE NOTIFICAÇÃO (FCM e In-App) ---
+
+    public void updateFcmToken(String token) {
+        if (isLoggedIn()) {
+            String userId = getCurrentUserId();
+            if (userId == null) return;
+            db.collection("usuarios").document(userId)
+                    .update("fcmToken", token)
+                    .addOnSuccessListener(aVoid -> Log.d("FirebaseManager", "FCM Token updated"))
+                    .addOnFailureListener(e -> Log.e("FirebaseManager", "Error updating FCM Token", e));
+        }
+    }
+
+    public void getUserNotifications(String userId, NotificationsCallback callback) {
+        db.collection("usuarios").document(userId)
+                .collection("notifications")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Notification> notifications = new ArrayList<>();
+                    for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                        Notification notification = doc.toObject(Notification.class);
+                        if (notification != null) {
+                            notification.setId(doc.getId());
+                            notifications.add(notification);
+                        }
+                    }
+                    callback.onSuccess(notifications);
+                })
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    public void sendInAppNotification(String userId, String title, String message, TaskCallback callback) {
+        String notificationId = db.collection("usuarios").document(userId)
+                .collection("notifications").document().getId();
+
+        // --- INÍCIO DA CORREÇÃO ---
+        // Cria a notificação usando o construtor de 5 argumentos
+        Notification notification = new Notification(
+                title,
+                message,
+                "booking", // Tipo
+                System.currentTimeMillis(),
+                false // read = false
+        );
+        // Define o ID separadamente
+        notification.setId(notificationId);
+        // --- FIM DA CORREÇÃO ---
+
+        db.collection("usuarios").document(userId)
+                .collection("notifications").document(notificationId)
+                .set(notification)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+
+    // --- MÉTODOS GERAIS ---
 
     public void logout() {
         auth.signOut();

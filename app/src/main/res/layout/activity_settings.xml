@@ -33,7 +33,6 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Account Section -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -162,7 +161,6 @@
 
             </LinearLayout>
 
-            <!-- Notifications Section -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -174,6 +172,7 @@
                 android:padding="16dp"
                 android:layout_marginTop="8dp"
                 android:background="@color/background" />
+
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -286,7 +285,6 @@
 
             </LinearLayout>
 
-            <!-- App Section -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -305,98 +303,6 @@
                 android:orientation="vertical"
                 android:background="@android:color/white"
                 android:paddingVertical="8dp">
-
-                <LinearLayout
-                    android:id="@+id/menuLanguage"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:gravity="center_vertical">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_language"
-                        app:tint="@color/text_primary" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="16dp"
-                        android:text="Idioma"
-                        android:textSize="16sp"
-                        android:textColor="@color/text_primary" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Português"
-                        android:textSize="14sp"
-                        android:textColor="@color/text_secondary"
-                        android:layout_marginEnd="8dp" />
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_arrow_right"
-                        app:tint="@color/text_secondary" />
-
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginStart="56dp"
-                    android:background="@color/divider" />
-
-                <LinearLayout
-                    android:id="@+id/menuTheme"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:gravity="center_vertical">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_palette"
-                        app:tint="@color/text_primary" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="16dp"
-                        android:text="Tema"
-                        android:textSize="16sp"
-                        android:textColor="@color/text_primary" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Claro"
-                        android:textSize="14sp"
-                        android:textColor="@color/text_secondary"
-                        android:layout_marginEnd="8dp" />
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_arrow_right"
-                        app:tint="@color/text_secondary" />
-
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginStart="56dp"
-                    android:background="@color/divider" />
 
                 <LinearLayout
                     android:id="@+id/menuAbout"
@@ -429,78 +335,6 @@
                         app:tint="@color/text_secondary" />
 
                 </LinearLayout>
-
-            </LinearLayout>
-
-            <!-- Added Developer Options Section (Temporary) -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Opções de Desenvolvedor (Temporário)"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="@color/error"
-                android:textAllCaps="true"
-                android:padding="16dp"
-                android:layout_marginTop="8dp"
-                android:background="@color/background" />
-
-            <LinearLayout
-                android:id="@+id/developerSection"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@android:color/white"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="⚠️ Esta seção será removida na versão final"
-                    android:textSize="12sp"
-                    android:textColor="@color/error"
-                    android:textStyle="italic"
-                    android:layout_marginBottom="12dp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Gerar Dados de Exemplo"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_primary"
-                    android:layout_marginBottom="8dp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Cria múltiplos locais de exemplo com imagens representativas no banco de dados para testes."
-                    android:textSize="14sp"
-                    android:textColor="@color/text_secondary"
-                    android:layout_marginBottom="16dp" />
-
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/buttonGenerateSampleData"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Gerar Dados de Exemplo"
-                        android:textAllCaps="false"
-                        app:cornerRadius="8dp"
-                        app:icon="@drawable/ic_add"
-                        style="@style/Widget.Material3.Button.TonalButton" />
-
-                    <ProgressBar
-                        android:id="@+id/progressBarGenerate"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_gravity="center"
-                        android:visibility="gone" />
-
-                </FrameLayout>
 
             </LinearLayout>
 

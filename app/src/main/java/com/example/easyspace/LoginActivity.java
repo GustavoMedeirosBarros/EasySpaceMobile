@@ -2,6 +2,7 @@ package com.example.easyspace;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -21,6 +22,7 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.messaging.FirebaseMessaging; // <-- IMPORTAR FIREBASE MESSAGING
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -109,6 +111,7 @@ public class LoginActivity extends AppCompatActivity {
                 startActivity(new Intent(this, FavoritesActivity.class));
                 return true;
             } else if (itemId == R.id.nav_messages) {
+                startActivity(new Intent(this, MessagesActivity.class));
                 return true;
             } else if (itemId == R.id.nav_profile) {
                 if (firebaseManager.isLoggedIn()) {
@@ -140,15 +143,8 @@ public class LoginActivity extends AppCompatActivity {
                     firebaseManager.isProfileComplete(userId, isComplete -> {
                         progressBar.setVisibility(View.GONE);
 
-                        if (isComplete) {
-                            Toast.makeText(LoginActivity.this, "Login com Google realizado com sucesso!", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                            finish();
-                        } else {
-                            Toast.makeText(LoginActivity.this, "Complete seu perfil para continuar", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(LoginActivity.this, CompleteProfileActivity.class));
-                            finish();
-                        }
+                        // ATUALIZA O TOKEN FCM
+                        updateFcmTokenAndRedirect(isComplete);
                     });
                 }
 
@@ -223,9 +219,9 @@ public class LoginActivity extends AppCompatActivity {
         firebaseManager.loginUser(email, senha, new FirebaseManager.AuthCallback() {
             public void onSuccess(String userId) {
                 progressBar.setVisibility(View.GONE);
-                Toast.makeText(LoginActivity.this, "Login realizado com sucesso!", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                finish();
+
+                // ATUALIZA O TOKEN FCM
+                updateFcmTokenAndRedirect(true); // true porque o perfil já deve estar completo
             }
 
             public void onFailure(String error) {
@@ -239,6 +235,33 @@ public class LoginActivity extends AppCompatActivity {
                 }
 
                 Toast.makeText(LoginActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    /**
+     * Busca o token FCM mais recente e o salva no Firestore
+     * antes de redirecionar o usuário.
+     */
+    private void updateFcmTokenAndRedirect(boolean isProfileComplete) {
+        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                String token = task.getResult();
+                Log.d("LoginActivity", "FCM Token: " + token);
+                firebaseManager.updateFcmToken(token);
+            } else {
+                Log.w("LoginActivity", "Fetching FCM registration token failed", task.getException());
+            }
+
+            // Redireciona o usuário independentemente do sucesso do token
+            if (isProfileComplete) {
+                Toast.makeText(LoginActivity.this, "Login realizado com sucesso!", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                finishAffinity();
+            } else {
+                Toast.makeText(LoginActivity.this, "Complete seu perfil para continuar", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(LoginActivity.this, CompleteProfileActivity.class));
+                finishAffinity();
             }
         });
     }

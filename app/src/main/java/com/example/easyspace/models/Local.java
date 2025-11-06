@@ -39,7 +39,7 @@ public class Local implements Serializable {
         this.preco = preco;
         this.rating = rating;
         this.categoria = categoria;
-        this.imageUrl = imageUrl;
+        this.setImageUrl(imageUrl);
         this.comodidades = new ArrayList<>();
         this.tipoLocacao = "hora";
         this.timestamp = System.currentTimeMillis();
@@ -77,7 +77,7 @@ public class Local implements Serializable {
         map.put("preco", preco);
         map.put("rating", rating);
         map.put("categoria", categoria);
-        map.put("imageUrl", imageUrl);
+        map.put("imageUrl", getImageUrl());
         map.put("descricao", descricao);
         map.put("capacidade", capacidade);
         map.put("horarioFuncionamento", horarioFuncionamento);
@@ -142,4 +142,5 @@ public class Local implements Serializable {
 
     public int getViewCount() { return viewCount; }
     public void setViewCount(int viewCount) { this.viewCount = viewCount; }
+
 }

@@ -2,6 +2,7 @@ package com.example.easyspace;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -9,6 +10,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.bumptech.glide.Glide;
 import com.example.easyspace.models.Local;
 import com.example.easyspace.models.Usuario;
 import com.example.easyspace.utils.FirebaseManager;
@@ -19,6 +21,8 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.auth.FirebaseUser; // Importar FirebaseUser
+import com.google.firebase.firestore.FieldValue; // Importar FieldValue
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class LocalDetailActivity extends AppCompatActivity {
@@ -44,12 +48,10 @@ public class LocalDetailActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
         firebaseManager = new FirebaseManager();
         initViews();
-        loadLocalData();
+        loadLocalData(); // Carrega dados do Intent
         setupListeners();
         setupBottomNavigation();
         setupMap(savedInstanceState);
-        loadFavoriteStatus();
-        loadProprietarioInfo();
     }
 
     private void initViews() {
@@ -74,13 +76,41 @@ public class LocalDetailActivity extends AppCompatActivity {
     }
 
     private void loadLocalData() {
+        // Pega o local passado pelo Intent
         local = (Local) getIntent().getSerializableExtra("local");
 
         if (local == null) {
-            Toast.makeText(this, "Erro ao carregar dados do local", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
+            // Se falhar, tenta buscar pelo ID (caso venha de um link, etc.)
+            String localId = getIntent().getStringExtra("localId");
+            if (localId != null) {
+                firebaseManager.getLocalById(localId, new FirebaseManager.LocalCallback() {
+                    @Override
+                    public void onSuccess(Local localFromDb) {
+                        local = localFromDb;
+                        populateViews();
+                        loadFavoriteStatus();
+                        loadProprietarioInfo();
+                    }
+                    @Override
+                    public void onFailure(String error) {
+                        Toast.makeText(LocalDetailActivity.this, "Erro ao carregar dados", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                });
+            } else {
+                Toast.makeText(this, "Erro ao carregar dados do local", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        } else {
+            // Se deu certo, popula a tela
+            populateViews();
+            loadFavoriteStatus();
+            loadProprietarioInfo();
         }
+    }
+
+    private void populateViews() {
+        if (local == null) return;
 
         incrementViewCount();
 
@@ -114,25 +144,37 @@ public class LocalDetailActivity extends AppCompatActivity {
             textViewComodidades.setText("Nenhuma comodidade informada");
         }
 
-        if (local.getImageUrl() != null && !local.getImageUrl().isEmpty()) {
-            try {
-                byte[] decodedString = android.util.Base64.decode(local.getImageUrl(), android.util.Base64.DEFAULT);
-                android.graphics.Bitmap decodedByte = android.graphics.BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-                imageViewLocal.setImageBitmap(decodedByte);
-            } catch (Exception e) {
-                e.printStackTrace();
-                imageViewLocal.setImageResource(R.drawable.ic_default_space);
+        // --- INÍCIO DA CORREÇÃO ---
+        // Lógica de Imagem
+        String imageUrl = local.getImageUrl();
+        // --- FIM DA CORREÇÃO ---
+
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            if (imageUrl.startsWith("http") || imageUrl.startsWith("https://")) {
+                Glide.with(this).load(imageUrl).into(imageViewLocal);
+            } else {
+                try {
+                    byte[] decodedString = android.util.Base64.decode(imageUrl, android.util.Base64.DEFAULT);
+                    android.graphics.Bitmap decodedByte = android.graphics.BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                    Glide.with(this).load(decodedByte).into(imageViewLocal);
+                } catch (Exception e) {
+                    Glide.with(this).load(R.drawable.ic_default_space).into(imageViewLocal);
+                }
             }
         } else {
-            imageViewLocal.setImageResource(R.drawable.ic_default_space);
+            Glide.with(this).load(R.drawable.ic_default_space).into(imageViewLocal);
         }
+
+        // Atualiza o mapa
+        setupMap(null);
     }
+
 
     private void incrementViewCount() {
         if (local == null || local.getId() == null) return;
 
         db.collection("locais").document(local.getId())
-                .update("viewCount", local.getViewCount() + 1)
+                .update("viewCount", FieldValue.increment(1)) // Maneira mais segura de incrementar
                 .addOnSuccessListener(aVoid -> {
                     local.setViewCount(local.getViewCount() + 1);
                 });
@@ -177,7 +219,6 @@ public class LocalDetailActivity extends AppCompatActivity {
                         updateFavoriteButton();
                         Toast.makeText(LocalDetailActivity.this, "Removido dos favoritos", Toast.LENGTH_SHORT).show();
                     }
-
                     @Override
                     public void onFailure(String error) {
                         Toast.makeText(LocalDetailActivity.this, "Erro ao remover favorito", Toast.LENGTH_SHORT).show();
@@ -191,7 +232,6 @@ public class LocalDetailActivity extends AppCompatActivity {
                         updateFavoriteButton();
                         Toast.makeText(LocalDetailActivity.this, "Adicionado aos favoritos", Toast.LENGTH_SHORT).show();
                     }
-
                     @Override
                     public void onFailure(String error) {
                         Toast.makeText(LocalDetailActivity.this, "Erro ao adicionar favorito", Toast.LENGTH_SHORT).show();
@@ -201,9 +241,56 @@ public class LocalDetailActivity extends AppCompatActivity {
         });
 
         buttonReservar.setOnClickListener(v -> {
-            Toast.makeText(this, "Funcionalidade de reserva em desenvolvimento", Toast.LENGTH_SHORT).show();
+            if (local == null || local.getProprietarioId() == null) {
+                Toast.makeText(this, "Erro ao identificar proprietário", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!firebaseManager.isLoggedIn()) {
+                Toast.makeText(this, "Faça login para reservar", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(this, LoginActivity.class));
+                return;
+            }
+
+            String proprietarioId = local.getProprietarioId();
+            String meuId = firebaseManager.getCurrentUserId();
+
+            if (proprietarioId.equals(meuId)) {
+                Toast.makeText(this, "Você não pode reservar seu próprio espaço", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            simularEnvioNotificacao(proprietarioId);
         });
     }
+
+    private void simularEnvioNotificacao(String proprietarioId) {
+        String nomeUsuario = "Um usuário";
+        FirebaseUser user = firebaseManager.getCurrentUser();
+        if (user != null && user.getDisplayName() != null && !user.getDisplayName().isEmpty()) {
+            nomeUsuario = user.getDisplayName();
+        }
+
+        String title = "Nova Reserva!";
+        String message = nomeUsuario + " fez uma reserva para o seu espaço: " + local.getNome();
+
+        buttonReservar.setEnabled(false);
+
+        firebaseManager.sendInAppNotification(proprietarioId, title, message, new FirebaseManager.TaskCallback() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(LocalDetailActivity.this, "Reserva solicitada! O proprietário será notificado.", Toast.LENGTH_LONG).show();
+                buttonReservar.setText("Reserva Solicitada");
+            }
+
+            @Override
+            public void onFailure(String error) {
+                Toast.makeText(LocalDetailActivity.this, "Reserva feita, mas falhou ao notificar proprietário.", Toast.LENGTH_SHORT).show();
+                buttonReservar.setEnabled(true);
+            }
+        });
+    }
+
 
     private void setupBottomNavigation() {
         bottomNavigation.setOnItemSelectedListener(item -> {
@@ -213,6 +300,9 @@ public class LocalDetailActivity extends AppCompatActivity {
                 return true;
             } else if (itemId == R.id.nav_favorites) {
                 startActivity(new Intent(this, FavoritesActivity.class));
+                return true;
+            } else if (itemId == R.id.nav_messages) {
+                startActivity(new Intent(this, MessagesActivity.class));
                 return true;
             } else if (itemId == R.id.nav_profile) {
                 if (firebaseManager.isLoggedIn()) {
@@ -230,16 +320,19 @@ public class LocalDetailActivity extends AppCompatActivity {
         if (mapView != null) {
             mapView.onCreate(savedInstanceState);
             mapView.getMapAsync(googleMap -> {
+                if (local == null) return;
+
                 LatLng location;
-                if (local != null && local.getLatitude() != 0 && local.getLongitude() != 0) {
+                if (local.getLatitude() != 0 && local.getLongitude() != 0) {
                     location = new LatLng(local.getLatitude(), local.getLongitude());
                 } else {
                     location = new LatLng(-23.5505, -46.6333);
                 }
 
+                googleMap.clear();
                 googleMap.addMarker(new MarkerOptions()
                         .position(location)
-                        .title(local != null ? local.getNome() : "Local"));
+                        .title(local.getNome()));
 
                 googleMap.moveCamera(CameraUpdateFactory
                         .newLatLngZoom(location, 15));
