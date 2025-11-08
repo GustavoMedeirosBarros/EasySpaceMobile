@@ -3,8 +3,8 @@ package com.example.easyspace;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Base64;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -12,6 +12,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
 import com.example.easyspace.models.Local;
@@ -19,19 +20,17 @@ import com.example.easyspace.models.Usuario;
 import com.example.easyspace.utils.FirebaseManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.gms.maps.MapView;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import java.util.Locale;
+import org.osmdroid.config.Configuration;
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Marker;
 
-public class LocalDetailActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class LocalDetailActivity extends AppCompatActivity {
 
     private ImageView imageViewLocal;
     private TextView textViewNome, textViewCategoria, textViewEndereco;
@@ -46,11 +45,13 @@ public class LocalDetailActivity extends AppCompatActivity implements OnMapReady
     private Local local;
     private FirebaseManager firebaseManager;
     private boolean isFavorite = false;
-    private GoogleMap googleMap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Configuration.getInstance().load(getApplicationContext(), PreferenceManager.getDefaultSharedPreferences(getApplicationContext()));
+
         setContentView(R.layout.activity_local_detail);
         db = FirebaseFirestore.getInstance();
         firebaseManager = new FirebaseManager();
@@ -58,7 +59,7 @@ public class LocalDetailActivity extends AppCompatActivity implements OnMapReady
         loadLocalData();
         setupListeners();
         setupBottomNavigation();
-        setupMap(savedInstanceState);
+        setupMap();
     }
 
     private void initViews() {
@@ -155,8 +156,7 @@ public class LocalDetailActivity extends AppCompatActivity implements OnMapReady
             } else {
                 try {
                     byte[] decodedString = Base64.decode(imageUrl, Base64.DEFAULT);
-                    Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-                    Glide.with(this).load(decodedByte).into(imageViewLocal);
+                    Glide.with(this).load(decodedString).into(imageViewLocal);
                 } catch (Exception e) {
                     Glide.with(this).load(R.drawable.ic_default_space).into(imageViewLocal);
                 }
@@ -165,20 +165,14 @@ public class LocalDetailActivity extends AppCompatActivity implements OnMapReady
             Glide.with(this).load(R.drawable.ic_default_space).into(imageViewLocal);
         }
 
-        if (googleMap != null) {
-            updateMapLocation();
-        }
+        updateMapLocation();
     }
-
 
     private void incrementViewCount() {
         if (local == null || local.getId() == null) return;
 
         db.collection("locais").document(local.getId())
-                .update("viewCount", FieldValue.increment(1))
-                .addOnSuccessListener(aVoid -> {
-                    local.setViewCount(local.getViewCount() + 1);
-                });
+                .update("viewCount", FieldValue.increment(1));
     }
 
     private void loadFavoriteStatus() {
@@ -294,7 +288,6 @@ public class LocalDetailActivity extends AppCompatActivity implements OnMapReady
         });
     }
 
-
     private void setupBottomNavigation() {
         bottomNavigation.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
@@ -316,41 +309,30 @@ public class LocalDetailActivity extends AppCompatActivity implements OnMapReady
         });
     }
 
-    private void setupMap(Bundle savedInstanceState) {
-        if (mapView != null) {
-            mapView.onCreate(savedInstanceState);
-            mapView.getMapAsync(this);
-        }
-    }
-
-    @Override
-    public void onMapReady(GoogleMap map) {
-        googleMap = map;
-        updateMapLocation();
+    private void setupMap() {
+        mapView.setTileSource(TileSourceFactory.MAPNIK);
+        mapView.setMultiTouchControls(true);
+        mapView.getController().setZoom(16.0);
     }
 
     private void updateMapLocation() {
-        if (googleMap == null || local == null) {
-            return;
-        }
+        if (local == null) return;
 
-        LatLng location;
-        if (local.getLatitude() != 0 && local.getLongitude() != 0) {
-            location = new LatLng(local.getLatitude(), local.getLongitude());
-        } else {
-            location = new LatLng(-23.5505, -46.6333);
-        }
+        double lat = (local.getLatitude() != 0) ? local.getLatitude() : -23.5505;
+        double lon = (local.getLongitude() != 0) ? local.getLongitude() : -46.6333;
 
-        googleMap.clear();
-        googleMap.addMarker(new MarkerOptions()
-                .position(location)
-                .title(local.getNome()));
+        GeoPoint startPoint = new GeoPoint(lat, lon);
+        mapView.getController().setCenter(startPoint);
 
-        googleMap.moveCamera(CameraUpdateFactory
-                .newLatLngZoom(location, 15));
+        Marker startMarker = new Marker(mapView);
+        startMarker.setPosition(startPoint);
+        startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+        startMarker.setTitle(local.getNome());
+        startMarker.setIcon(ContextCompat.getDrawable(this, R.drawable.ic_location));
 
-        googleMap.getUiSettings().setZoomControlsEnabled(true);
-        googleMap.getUiSettings().setMapToolbarEnabled(false);
+        mapView.getOverlays().clear();
+        mapView.getOverlays().add(startMarker);
+        mapView.invalidate();
     }
 
     private void loadProprietarioInfo() {
@@ -381,24 +363,16 @@ public class LocalDetailActivity extends AppCompatActivity implements OnMapReady
     @Override
     protected void onResume() {
         super.onResume();
-        if (mapView != null) mapView.onResume();
+        if (mapView != null) {
+            mapView.onResume();
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (mapView != null) mapView.onPause();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (mapView != null) mapView.onDestroy();
-    }
-
-    @Override
-    public void onLowMemory() {
-        super.onLowMemory();
-        if (mapView != null) mapView.onLowMemory();
+        if (mapView != null) {
+            mapView.onPause();
+        }
     }
 }
