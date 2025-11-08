@@ -5,6 +5,9 @@
     <color name="primary_light">#fde89e</color>
     <color name="accent">#fcd45c</color>
 
+    <color name="red">#FF0000</color>
+    
+
     <color name="background">#F5F5F5</color>
     <color name="surface">#FFFFFF</color>
     <color name="white">#FFFFFF</color>
@@ -25,4 +28,8 @@
 
     <color name="gradient_start">#fcd45c</color>
     <color name="gradient_end">#FF9800</color>
+
+    <color name="background_light">#FAFAFA</color>
+    <color name="background_card">#FFFFFF</color>
+    <color name="icon_tint_unselected">#9E9E9E</color>
 </resources>

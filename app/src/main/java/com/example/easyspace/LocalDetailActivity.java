@@ -1,8 +1,11 @@
 package com.example.easyspace;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
+import android.util.Base64;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -19,13 +22,16 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.firebase.auth.FirebaseUser; // Importar FirebaseUser
-import com.google.firebase.firestore.FieldValue; // Importar FieldValue
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-public class LocalDetailActivity extends AppCompatActivity {
+import java.util.Locale;
+
+public class LocalDetailActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private ImageView imageViewLocal;
     private TextView textViewNome, textViewCategoria, textViewEndereco;
@@ -40,6 +46,7 @@ public class LocalDetailActivity extends AppCompatActivity {
     private Local local;
     private FirebaseManager firebaseManager;
     private boolean isFavorite = false;
+    private GoogleMap googleMap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,7 +55,7 @@ public class LocalDetailActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
         firebaseManager = new FirebaseManager();
         initViews();
-        loadLocalData(); // Carrega dados do Intent
+        loadLocalData();
         setupListeners();
         setupBottomNavigation();
         setupMap(savedInstanceState);
@@ -76,11 +83,9 @@ public class LocalDetailActivity extends AppCompatActivity {
     }
 
     private void loadLocalData() {
-        // Pega o local passado pelo Intent
         local = (Local) getIntent().getSerializableExtra("local");
 
         if (local == null) {
-            // Se falhar, tenta buscar pelo ID (caso venha de um link, etc.)
             String localId = getIntent().getStringExtra("localId");
             if (localId != null) {
                 firebaseManager.getLocalById(localId, new FirebaseManager.LocalCallback() {
@@ -102,7 +107,6 @@ public class LocalDetailActivity extends AppCompatActivity {
                 finish();
             }
         } else {
-            // Se deu certo, popula a tela
             populateViews();
             loadFavoriteStatus();
             loadProprietarioInfo();
@@ -144,18 +148,14 @@ public class LocalDetailActivity extends AppCompatActivity {
             textViewComodidades.setText("Nenhuma comodidade informada");
         }
 
-        // --- INÍCIO DA CORREÇÃO ---
-        // Lógica de Imagem
         String imageUrl = local.getImageUrl();
-        // --- FIM DA CORREÇÃO ---
-
         if (imageUrl != null && !imageUrl.isEmpty()) {
             if (imageUrl.startsWith("http") || imageUrl.startsWith("https://")) {
                 Glide.with(this).load(imageUrl).into(imageViewLocal);
             } else {
                 try {
-                    byte[] decodedString = android.util.Base64.decode(imageUrl, android.util.Base64.DEFAULT);
-                    android.graphics.Bitmap decodedByte = android.graphics.BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                    byte[] decodedString = Base64.decode(imageUrl, Base64.DEFAULT);
+                    Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
                     Glide.with(this).load(decodedByte).into(imageViewLocal);
                 } catch (Exception e) {
                     Glide.with(this).load(R.drawable.ic_default_space).into(imageViewLocal);
@@ -165,8 +165,9 @@ public class LocalDetailActivity extends AppCompatActivity {
             Glide.with(this).load(R.drawable.ic_default_space).into(imageViewLocal);
         }
 
-        // Atualiza o mapa
-        setupMap(null);
+        if (googleMap != null) {
+            updateMapLocation();
+        }
     }
 
 
@@ -174,7 +175,7 @@ public class LocalDetailActivity extends AppCompatActivity {
         if (local == null || local.getId() == null) return;
 
         db.collection("locais").document(local.getId())
-                .update("viewCount", FieldValue.increment(1)) // Maneira mais segura de incrementar
+                .update("viewCount", FieldValue.increment(1))
                 .addOnSuccessListener(aVoid -> {
                     local.setViewCount(local.getViewCount() + 1);
                 });
@@ -219,6 +220,7 @@ public class LocalDetailActivity extends AppCompatActivity {
                         updateFavoriteButton();
                         Toast.makeText(LocalDetailActivity.this, "Removido dos favoritos", Toast.LENGTH_SHORT).show();
                     }
+
                     @Override
                     public void onFailure(String error) {
                         Toast.makeText(LocalDetailActivity.this, "Erro ao remover favorito", Toast.LENGTH_SHORT).show();
@@ -232,6 +234,7 @@ public class LocalDetailActivity extends AppCompatActivity {
                         updateFavoriteButton();
                         Toast.makeText(LocalDetailActivity.this, "Adicionado aos favoritos", Toast.LENGTH_SHORT).show();
                     }
+
                     @Override
                     public void onFailure(String error) {
                         Toast.makeText(LocalDetailActivity.this, "Erro ao adicionar favorito", Toast.LENGTH_SHORT).show();
@@ -301,9 +304,6 @@ public class LocalDetailActivity extends AppCompatActivity {
             } else if (itemId == R.id.nav_favorites) {
                 startActivity(new Intent(this, FavoritesActivity.class));
                 return true;
-            } else if (itemId == R.id.nav_messages) {
-                startActivity(new Intent(this, MessagesActivity.class));
-                return true;
             } else if (itemId == R.id.nav_profile) {
                 if (firebaseManager.isLoggedIn()) {
                     startActivity(new Intent(this, ProfileActivity.class));
@@ -319,28 +319,38 @@ public class LocalDetailActivity extends AppCompatActivity {
     private void setupMap(Bundle savedInstanceState) {
         if (mapView != null) {
             mapView.onCreate(savedInstanceState);
-            mapView.getMapAsync(googleMap -> {
-                if (local == null) return;
-
-                LatLng location;
-                if (local.getLatitude() != 0 && local.getLongitude() != 0) {
-                    location = new LatLng(local.getLatitude(), local.getLongitude());
-                } else {
-                    location = new LatLng(-23.5505, -46.6333);
-                }
-
-                googleMap.clear();
-                googleMap.addMarker(new MarkerOptions()
-                        .position(location)
-                        .title(local.getNome()));
-
-                googleMap.moveCamera(CameraUpdateFactory
-                        .newLatLngZoom(location, 15));
-
-                googleMap.getUiSettings().setZoomControlsEnabled(true);
-                googleMap.getUiSettings().setMapToolbarEnabled(false);
-            });
+            mapView.getMapAsync(this);
         }
+    }
+
+    @Override
+    public void onMapReady(GoogleMap map) {
+        googleMap = map;
+        updateMapLocation();
+    }
+
+    private void updateMapLocation() {
+        if (googleMap == null || local == null) {
+            return;
+        }
+
+        LatLng location;
+        if (local.getLatitude() != 0 && local.getLongitude() != 0) {
+            location = new LatLng(local.getLatitude(), local.getLongitude());
+        } else {
+            location = new LatLng(-23.5505, -46.6333);
+        }
+
+        googleMap.clear();
+        googleMap.addMarker(new MarkerOptions()
+                .position(location)
+                .title(local.getNome()));
+
+        googleMap.moveCamera(CameraUpdateFactory
+                .newLatLngZoom(location, 15));
+
+        googleMap.getUiSettings().setZoomControlsEnabled(true);
+        googleMap.getUiSettings().setMapToolbarEnabled(false);
     }
 
     private void loadProprietarioInfo() {

@@ -22,7 +22,7 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
-import com.google.firebase.messaging.FirebaseMessaging; // <-- IMPORTAR FIREBASE MESSAGING
+import com.google.firebase.messaging.FirebaseMessaging;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -110,9 +110,6 @@ public class LoginActivity extends AppCompatActivity {
             } else if (itemId == R.id.nav_favorites) {
                 startActivity(new Intent(this, FavoritesActivity.class));
                 return true;
-            } else if (itemId == R.id.nav_messages) {
-                startActivity(new Intent(this, MessagesActivity.class));
-                return true;
             } else if (itemId == R.id.nav_profile) {
                 if (firebaseManager.isLoggedIn()) {
                     startActivity(new Intent(this, ProfileActivity.class));
@@ -143,7 +140,6 @@ public class LoginActivity extends AppCompatActivity {
                     firebaseManager.isProfileComplete(userId, isComplete -> {
                         progressBar.setVisibility(View.GONE);
 
-                        // ATUALIZA O TOKEN FCM
                         updateFcmTokenAndRedirect(isComplete);
                     });
                 }
@@ -220,8 +216,7 @@ public class LoginActivity extends AppCompatActivity {
             public void onSuccess(String userId) {
                 progressBar.setVisibility(View.GONE);
 
-                // ATUALIZA O TOKEN FCM
-                updateFcmTokenAndRedirect(true); // true porque o perfil já deve estar completo
+                updateFcmTokenAndRedirect(true);
             }
 
             public void onFailure(String error) {
@@ -253,7 +248,6 @@ public class LoginActivity extends AppCompatActivity {
                 Log.w("LoginActivity", "Fetching FCM registration token failed", task.getException());
             }
 
-            // Redireciona o usuário independentemente do sucesso do token
             if (isProfileComplete) {
                 Toast.makeText(LoginActivity.this, "Login realizado com sucesso!", Toast.LENGTH_SHORT).show();
                 startActivity(new Intent(LoginActivity.this, MainActivity.class));

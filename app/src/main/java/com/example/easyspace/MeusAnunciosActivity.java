@@ -11,18 +11,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.easyspace.adapters.MeusAnunciosAdapter; // Import o novo adapter
+import com.example.easyspace.adapters.MeusAnunciosAdapter;
 import com.example.easyspace.models.Local;
 import com.example.easyspace.utils.FirebaseManager;
 import com.google.android.material.appbar.MaterialToolbar;
-import com.google.android.material.button.MaterialButton; // Import correto do MaterialButton
+import com.google.android.material.button.MaterialButton;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MeusAnunciosActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
-    private MeusAnunciosAdapter adapter; // Usar o novo adapter
+    private MeusAnunciosAdapter adapter;
     private List<Local> localList;
     private FirebaseManager firebaseManager;
     private ProgressBar progressBar;
@@ -33,7 +33,7 @@ public class MeusAnunciosActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_meus_anuncios); // Usa o novo layout
+        setContentView(R.layout.activity_meus_anuncios);
 
         firebaseManager = new FirebaseManager();
         localList = new ArrayList<>();
@@ -70,20 +70,20 @@ public class MeusAnunciosActivity extends AppCompatActivity {
     private void setupRecyclerView() {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // Configura os cliques do adapter
+
         MeusAnunciosAdapter.OnItemClickListener listener = new MeusAnunciosAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(Local local) {
                 Intent intent = new Intent(MeusAnunciosActivity.this, LocalDetailActivity.class);
-                intent.putExtra("local", local); // Passa o objeto local
+                intent.putExtra("local", local);
                 startActivity(intent);
             }
 
             @Override
             public void onEditClick(Local local) {
-                // Lógica para editar (precisa da Activity CriarAnuncio)
+
                 Intent intent = new Intent(MeusAnunciosActivity.this, CriarAnuncioActivity.class);
-                intent.putExtra("localIdToEdit", local.getId()); // Passa o ID para edição
+                intent.putExtra("localIdToEdit", local.getId());
                 startActivity(intent);
             }
 
@@ -112,14 +112,14 @@ public class MeusAnunciosActivity extends AppCompatActivity {
             return;
         }
 
-        // Usa o método correto que foi criado no FirebaseManager
         firebaseManager.getLocaisByUserId(userId, new FirebaseManager.LocaisCallback() {
             @Override
             public void onSuccess(List<Local> locais) {
                 progressBar.setVisibility(View.GONE);
                 localList.clear();
                 localList.addAll(locais);
-                adapter.updateData(locais); // Atualiza o adapter
+                adapter.updateData(locais);
+
                 checkEmptyState();
             }
 
@@ -153,13 +153,12 @@ public class MeusAnunciosActivity extends AppCompatActivity {
 
     private void deleteLocal(Local local) {
         progressBar.setVisibility(View.VISIBLE);
-        // Usa o método correto do FirebaseManager
         firebaseManager.deleteLocal(local.getId(), new FirebaseManager.TaskCallback() {
             @Override
             public void onSuccess() {
                 progressBar.setVisibility(View.GONE);
                 Toast.makeText(MeusAnunciosActivity.this, "Anúncio excluído", Toast.LENGTH_SHORT).show();
-                loadAnuncios(); // Recarrega a lista
+                loadAnuncios();
             }
 
             @Override

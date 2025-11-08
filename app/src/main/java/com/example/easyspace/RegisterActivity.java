@@ -135,9 +135,6 @@ public class RegisterActivity extends AppCompatActivity {
             } else if (itemId == R.id.nav_favorites) {
                 startActivity(new Intent(this, FavoritesActivity.class));
                 return true;
-            } else if (itemId == R.id.nav_messages) {
-                Toast.makeText(this, "Mensagens", Toast.LENGTH_SHORT).show();
-                return true;
             } else if (itemId == R.id.nav_profile) {
                 return true;
             }

@@ -23,7 +23,7 @@ public class NotificationsActivity extends AppCompatActivity {
 
     private MaterialToolbar toolbar;
     private RecyclerView recyclerViewNotifications;
-    private LinearLayout layoutEmptyState; // Alterado de TextView
+    private LinearLayout layoutEmptyState;
     private NotificationAdapter adapter;
     private FirebaseManager firebaseManager;
     private List<Notification> notificationList;
@@ -32,7 +32,7 @@ public class NotificationsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_notifications); // Usa o novo layout
+        setContentView(R.layout.activity_notifications);
 
         firebaseManager = new FirebaseManager();
         notificationList = new ArrayList<>();
@@ -51,8 +51,8 @@ public class NotificationsActivity extends AppCompatActivity {
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
         recyclerViewNotifications = findViewById(R.id.recyclerViewNotifications);
-        layoutEmptyState = findViewById(R.id.layoutEmptyState); // ID do LinearLayout
-        progressBar = findViewById(R.id.progressBar); // ID do ProgressBar
+        layoutEmptyState = findViewById(R.id.layoutEmptyState);
+        progressBar = findViewById(R.id.progressBar);
     }
 
     private void setupToolbar() {
@@ -89,7 +89,7 @@ public class NotificationsActivity extends AppCompatActivity {
                 progressBar.setVisibility(View.GONE);
                 notificationList.clear();
                 notificationList.addAll(notifications);
-                adapter.updateData(notificationList); // Atualiza o adapter
+                adapter.updateData(notificationList);
                 checkEmptyState();
             }
 
@@ -112,5 +112,4 @@ public class NotificationsActivity extends AppCompatActivity {
         }
     }
 
-    // O método getSampleNotifications() não é mais necessário e pode ser removido
 }

@@ -25,7 +25,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:scaleType="centerCrop"
-                    android:contentDescription="Imagem do local" />
+                    android:contentDescription="Imagem do local"
+                    android:src="@drawable/ic_default_space" />
 
                 <ImageButton
                     android:id="@+id/buttonVoltar"

@@ -423,7 +423,7 @@ public class CriarAnuncioActivity extends AppCompatActivity {
                     local.setImageUrl(base64Images.get(0));
                 }
 
-                firebaseManager.salvarLocal(local, new FirebaseManager.LocalCallback() {
+                firebaseManager.salvarLocal(local, new FirebaseManager.TaskCallback() {
                     @Override
                     public void onSuccess() {
                         runOnUiThread(() -> {
@@ -438,11 +438,11 @@ public class CriarAnuncioActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void onError(String mensagem) {
+                    public void onFailure(String error) {
                         runOnUiThread(() -> {
                             progressBar.setVisibility(View.GONE);
                             buttonPublicar.setEnabled(true);
-                            Toast.makeText(CriarAnuncioActivity.this, mensagem, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(CriarAnuncioActivity.this, error, Toast.LENGTH_SHORT).show();
                         });
                     }
                 });
@@ -472,7 +472,6 @@ public class CriarAnuncioActivity extends AppCompatActivity {
 
                 String jsonResponse = response.toString();
                 if (jsonResponse.startsWith("[") && jsonResponse.length() > 2) {
-                    // Parse JSON manually (simple parsing)
                     int latIndex = jsonResponse.indexOf("\"lat\":\"") + 7;
                     int latEndIndex = jsonResponse.indexOf("\"", latIndex);
                     String latStr = jsonResponse.substring(latIndex, latEndIndex);

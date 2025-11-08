@@ -50,7 +50,6 @@ public class MeusAnunciosAdapter extends RecyclerView.Adapter<MeusAnunciosAdapte
         return localList.size();
     }
 
-    // Para atualizar a lista
     public void updateData(List<Local> newLocalList) {
         this.localList.clear();
         this.localList.addAll(newLocalList);
@@ -75,18 +74,14 @@ public class MeusAnunciosAdapter extends RecyclerView.Adapter<MeusAnunciosAdapte
         void bind(Local local, OnItemClickListener listener) {
             textViewNome.setText(local.getNome());
             textViewCategoria.setText(local.getCategoria());
-            textViewPreco.setText(local.getPrecoFormatado()); // Usando o método do modelo
+            textViewPreco.setText(local.getPrecoFormatado());
 
-            // --- INÍCIO DA CORREÇÃO ---
-            // Acessa a imagem usando getImageUrl()
             String imageUrl = local.getImageUrl();
-            // --- FIM DA CORREÇÃO ---
 
             if (imageUrl != null && !imageUrl.isEmpty()) {
                 if (imageUrl.startsWith("http") || imageUrl.startsWith("https://")) {
                     Glide.with(context).load(imageUrl).into(imageViewLocal);
                 } else {
-                    // Tenta decodificar se for Base64
                     try {
                         byte[] decodedString = android.util.Base64.decode(imageUrl, android.util.Base64.DEFAULT);
                         android.graphics.Bitmap decodedByte = android.graphics.BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);

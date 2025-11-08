@@ -4,81 +4,140 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:background="@color/background_card"
+    android:padding="24dp">
 
-    <!-- Price Range -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Faixa de Preço"
-        android:textSize="16sp"
+        android:text="Filtros"
+        android:textSize="22sp"
         android:textStyle="bold"
         android:textColor="@color/text_primary" />
 
     <TextView
-        android:id="@+id/textViewPriceRange"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="R$ 0 - R$ 1000"
-        android:textSize="14sp"
-        android:textColor="@color/text_secondary" />
+        android:text="Faixa de Preço (por hora)"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:layout_marginTop="20dp"/>
 
     <com.google.android.material.slider.RangeSlider
-        android:id="@+id/rangeSliderPrice"
+        android:id="@+id/rangeSliderPreco"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
         android:valueFrom="0"
-        android:valueTo="1000"
+        android:valueTo="500"
         android:stepSize="10"
-        app:values="@array/initial_slider_values" />
+        app:values="@array/initial_slider_values"
+        app:labelBehavior="withinBounds"/>
 
-    <!-- Amenities -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
+        android:text="Capacidade Mínima"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:layout_marginTop="16dp"/>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editTextCapacidadeMin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Nº de pessoas"
+            android:inputType="number" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:text="Comodidades"
         android:textSize="16sp"
         android:textStyle="bold"
-        android:textColor="@color/text_primary" />
+        android:textColor="@color/text_primary"
+        android:layout_marginTop="20dp"/>
 
-    <com.google.android.material.chip.ChipGroup
-        android:id="@+id/chipGroupAmenities"
+    <GridLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        app:singleLine="false">
+        android:columnCount="2"
+        android:layout_marginTop="8dp">
 
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chipWifi"
-            style="@style/Widget.MaterialComponents.Chip.Filter"
+        <CheckBox
+            android:id="@+id/checkWifiFiltro"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Wi-Fi" />
-
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chipAr"
-            style="@style/Widget.MaterialComponents.Chip.Filter"
+        <CheckBox
+            android:id="@+id/checkArCondicionadoFiltro"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Ar Condicionado" />
-
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chipEstacionamento"
-            style="@style/Widget.MaterialComponents.Chip.Filter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Estacionamento" />
-
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chipCafe"
-            style="@style/Widget.MaterialComponents.Chip.Filter"
+        <CheckBox
+            android:id="@+id/checkCafeFiltro"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Café" />
+        <CheckBox
+            android:id="@+id/checkProjetorFiltro"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Projetor" />
+        <CheckBox
+            android:id="@+id/checkEstacionamentoFiltro"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Estacionamento" />
+        <CheckBox
+            android:id="@+id/checkAcessibilidadeFiltro"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Acessibilidade" />
 
-    </com.google.android.material.chip.ChipGroup>
+    </GridLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/divider"
+        android:layout_marginTop="24dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonLimparFiltros"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Limpar"
+            android:textColor="@color/text_secondary"/>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonAplicarFiltros"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Aplicar"
+            android:backgroundTint="@color/primary"/>
+
+    </LinearLayout>
 
 </LinearLayout>

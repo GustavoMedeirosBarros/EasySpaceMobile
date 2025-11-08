@@ -2,14 +2,13 @@ package com.example.easyspace.models;
 
 public class Categoria {
     private String nome;
-    private int iconResId;
+    private int iconeResId;
 
-    public Categoria() {
-    }
+    public Categoria() {}
 
-    public Categoria(String nome, int iconResId) {
+    public Categoria(String nome, int iconeResId) {
         this.nome = nome;
-        this.iconResId = iconResId;
+        this.iconeResId = iconeResId;
     }
 
     public String getNome() {
@@ -20,12 +19,11 @@ public class Categoria {
         this.nome = nome;
     }
 
-    public int getIconResId() {
-        return iconResId;
+    public int getIconeResId() {
+        return iconeResId;
     }
 
-    public void setIconResId(int iconResId) {
-        this.iconResId = iconResId;
+    public void setIconeResId(int iconeResId) {
+        this.iconeResId = iconeResId;
     }
 }
-

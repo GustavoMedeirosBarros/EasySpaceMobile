@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Enhanced card design with better shadows, spacing, and visual hierarchy -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -17,10 +16,9 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Image container with favorite button overlay -->
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="200dp">
+            android:layout_height="220dp">
 
             <ImageView
                 android:id="@+id/imageViewLocal"
@@ -30,21 +28,19 @@
                 android:src="@drawable/ic_default_space"
                 android:background="@color/white" />
 
-            <!-- Gradient overlay for better text readability -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
                 android:layout_gravity="bottom"
                 android:background="@drawable/gradient_overlay" />
 
-            <!-- Favorite button overlay -->
             <ImageButton
                 android:id="@+id/buttonFavorite"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
                 android:layout_gravity="top|end"
                 android:layout_margin="12dp"
-                android:src="@drawable/ic_favorite"
+                android:src="@drawable/ic_favorite_border"
                 android:background="@drawable/circle_background"
                 android:backgroundTint="@color/white"
                 android:contentDescription="Favoritar"
@@ -53,14 +49,12 @@
 
         </FrameLayout>
 
-        <!-- Content with better spacing and typography -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="14dp">
 
-            <!-- Category and Rating -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -86,7 +80,7 @@
                     android:layout_width="16dp"
                     android:layout_height="16dp"
                     android:src="@drawable/ic_star"
-                    app:tint="@color/error"
+                    app:tint="@color/primary"
                     android:layout_marginEnd="4dp" />
 
                 <TextView
@@ -101,7 +95,6 @@
 
             </LinearLayout>
 
-            <!-- Name -->
             <TextView
                 android:id="@+id/textViewNome"
                 android:layout_width="match_parent"
@@ -115,7 +108,6 @@
                 android:maxLines="2"
                 android:ellipsize="end" />
 
-            <!-- Address -->
             <TextView
                 android:id="@+id/textViewEndereco"
                 android:layout_width="match_parent"
@@ -128,7 +120,6 @@
                 android:maxLines="1"
                 android:ellipsize="end" />
 
-            <!-- Price -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -147,6 +138,7 @@
                     android:fontFamily="sans-serif-medium" />
 
                 <TextView
+                    android:id="@+id/textViewTipoLocacao"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text=" / hora"
@@ -157,7 +149,5 @@
             </LinearLayout>
 
         </LinearLayout>
-
     </LinearLayout>
-
 </com.google.android.material.card.MaterialCardView>

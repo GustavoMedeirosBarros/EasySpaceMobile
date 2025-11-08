@@ -1,97 +1,104 @@
 package com.example.easyspace.adapters;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
-import com.bumptech.glide.Glide;
+
 import com.example.easyspace.R;
 import com.example.easyspace.models.Categoria;
+import com.google.android.material.card.MaterialCardView;
+
 import java.util.List;
 
-public class CategoriaAdapter extends RecyclerView.Adapter<CategoriaAdapter.CategoriaViewHolder> {
+public class CategoriaAdapter extends RecyclerView.Adapter<CategoriaAdapter.ViewHolder> {
 
     private Context context;
-    private List<Categoria> categorias;
-    private OnCategoryClickListener listener;
-    private int selectedPosition = -1;
+    private List<Categoria> categoriasList;
+    private OnCategoriaClickListener clickListener;
+    private int selectedPosition = RecyclerView.NO_POSITION;
 
-    public interface OnCategoryClickListener {
-        void onCategoryClick(Categoria categoria);
+    public interface OnCategoriaClickListener {
+        void onCategoriaClick(Categoria categoria);
     }
 
-    public CategoriaAdapter(Context context, List<Categoria> categorias) {
+    public CategoriaAdapter(Context context, List<Categoria> categoriasList, OnCategoriaClickListener clickListener) {
         this.context = context;
-        this.categorias = categorias;
-    }
-
-    public CategoriaAdapter(Context context, List<Categoria> categorias, OnCategoryClickListener listener) {
-        this.context = context;
-        this.categorias = categorias;
-        this.listener = listener;
+        this.categoriasList = categoriasList;
+        this.clickListener = clickListener;
     }
 
     @NonNull
     @Override
-    public CategoriaViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(context).inflate(R.layout.item_categoria, parent, false);
-        return new CategoriaViewHolder(view);
+        return new ViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull CategoriaViewHolder holder, int position) {
-        Categoria categoria = categorias.get(position);
-        holder.textViewCategoria.setText(categoria.getNome());
-        holder.imageViewCategoria.setImageResource(categoria.getIconResId());
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        Categoria categoria = categoriasList.get(position);
+        holder.textViewNome.setText(categoria.getNome());
 
-        if (holder.getAdapterPosition() == selectedPosition) {
-            holder.itemView.setAlpha(1.0f);
-            holder.itemView.setScaleX(1.1f);
-            holder.itemView.setScaleY(1.1f);
+
+        holder.imageViewIcone.setImageResource(categoria.getIconeResId());
+
+        if (selectedPosition == position) {
+            holder.cardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.primary_light));
+            holder.textViewNome.setTextColor(ContextCompat.getColor(context, R.color.primary_dark));
+            holder.imageViewIcone.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(context, R.color.primary_dark)));
         } else {
-            holder.itemView.setAlpha(0.7f);
-            holder.itemView.setScaleX(1.0f);
-            holder.itemView.setScaleY(1.0f);
+            holder.cardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.background_card));
+            holder.textViewNome.setTextColor(ContextCompat.getColor(context, R.color.text_secondary));
+            holder.imageViewIcone.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(context, R.color.icon_tint_unselected)));
         }
 
         holder.itemView.setOnClickListener(v -> {
-            int clickedPosition = holder.getAdapterPosition();
-            if (clickedPosition == RecyclerView.NO_POSITION) return;
-
-            int previousPosition = selectedPosition;
-            if (selectedPosition == clickedPosition) {
-                selectedPosition = -1;
-                if (listener != null) {
-                    listener.onCategoryClick(null);
-                }
+            int previousSelected = selectedPosition;
+            if (selectedPosition == position) {
+                selectedPosition = RecyclerView.NO_POSITION;
+                notifyItemChanged(previousSelected);
             } else {
-                selectedPosition = clickedPosition;
-                if (listener != null) {
-                    listener.onCategoryClick(categorias.get(clickedPosition));
+                selectedPosition = holder.getAdapterPosition();
+                if (previousSelected != RecyclerView.NO_POSITION) {
+                    notifyItemChanged(previousSelected);
                 }
+                notifyItemChanged(selectedPosition);
             }
-            notifyItemChanged(previousPosition);
-            notifyItemChanged(selectedPosition);
+            clickListener.onCategoriaClick(categoria);
         });
     }
 
     @Override
     public int getItemCount() {
-        return categorias != null ? categorias.size() : 0;
+        return categoriasList.size();
     }
 
-    public static class CategoriaViewHolder extends RecyclerView.ViewHolder {
-        ImageView imageViewCategoria;
-        TextView textViewCategoria;
+    public void clearSelection() {
+        int previousSelected = selectedPosition;
+        selectedPosition = RecyclerView.NO_POSITION;
+        if (previousSelected != RecyclerView.NO_POSITION) {
+            notifyItemChanged(previousSelected);
+        }
+    }
 
-        public CategoriaViewHolder(@NonNull View itemView) {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        MaterialCardView cardView;
+        ImageView imageViewIcone;
+        TextView textViewNome;
+
+        public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            imageViewCategoria = itemView.findViewById(R.id.imageViewCategoria);
-            textViewCategoria = itemView.findViewById(R.id.textViewCategoria);
+            cardView = itemView.findViewById(R.id.cardViewCategoria);
+            imageViewIcone = itemView.findViewById(R.id.imageViewIcone);
+            textViewNome = itemView.findViewById(R.id.textViewNome);
         }
     }
 }

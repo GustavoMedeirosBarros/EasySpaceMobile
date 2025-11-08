@@ -77,9 +77,6 @@ public class FavoritesActivity extends AppCompatActivity {
                 return true;
             } else if (itemId == R.id.nav_favorites) {
                 return true;
-            } else if (itemId == R.id.nav_messages) {
-                startActivity(new Intent(this, MessagesActivity.class));
-                return true;
             } else if (itemId == R.id.nav_profile) {
                 if (firebaseManager.isLoggedIn()) {
                     startActivity(new Intent(this, ProfileActivity.class));
