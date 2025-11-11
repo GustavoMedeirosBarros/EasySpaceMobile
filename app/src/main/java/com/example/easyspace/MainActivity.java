@@ -30,6 +30,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity implements CategoriaAdapter.OnCategoriaClickListener {
 
+    private static final String MP_PUBLIC_KEY = "TEST-27e91433-dae1-40d1-9b26-155234ec887f";
     private BottomNavigationView bottomNavigation;
     private FirebaseManager firebaseManager;
     private RecyclerView recyclerViewCategorias, recyclerViewLocais;
@@ -64,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements CategoriaAdapter.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
 
         firebaseManager = new FirebaseManager();

@@ -18,7 +18,6 @@ import com.bumptech.glide.Glide;
 import com.example.easyspace.models.Local;
 import com.example.easyspace.models.Usuario;
 import com.example.easyspace.utils.FirebaseManager;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
@@ -37,9 +36,9 @@ public class LocalDetailActivity extends AppCompatActivity {
     private TextView textViewPreco, textViewRating, textViewDescricao;
     private TextView textViewCapacidade, textViewHorario, textViewComodidades;
     private TextView textViewProprietarioNome, textViewProprietarioEmail, textViewProprietarioTelefone;
-    private MaterialButton buttonReservar;
+    private TextView textViewPrecoInferior; // TextView da barra flutuante
+    private MaterialButton buttonReservar; // Botão da barra flutuante
     private ImageButton buttonVoltar, buttonFavorito;
-    private BottomNavigationView bottomNavigation;
     private MapView mapView;
     private FirebaseFirestore db;
     private Local local;
@@ -50,7 +49,13 @@ public class LocalDetailActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Configuration.getInstance().load(getApplicationContext(), PreferenceManager.getDefaultSharedPreferences(getApplicationContext()));
+        // --- CORREÇÃO DO ERRO DO MAPA (OSMDroid) ---
+        // Isso deve ser chamado ANTES de setContentView()
+        Configuration.getInstance().load(getApplicationContext(),
+                PreferenceManager.getDefaultSharedPreferences(getApplicationContext()));
+        // Define o cache para um local seguro dentro do app (corrige o erro 'avc: denied')
+        Configuration.getInstance().setOsmdroidTileCache(getCacheDir());
+        // ---------------------------------------------
 
         setContentView(R.layout.activity_local_detail);
         db = FirebaseFirestore.getInstance();
@@ -58,7 +63,7 @@ public class LocalDetailActivity extends AppCompatActivity {
         initViews();
         loadLocalData();
         setupListeners();
-        setupBottomNavigation();
+        // setupBottomNavigation(); // REMOVIDO
         setupMap();
     }
 
@@ -67,7 +72,7 @@ public class LocalDetailActivity extends AppCompatActivity {
         textViewNome = findViewById(R.id.textViewNome);
         textViewCategoria = findViewById(R.id.textViewCategoria);
         textViewEndereco = findViewById(R.id.textViewEndereco);
-        textViewPreco = findViewById(R.id.textViewPreco);
+        textViewPreco = findViewById(R.id.textViewPreco); // Preço no corpo do scroll
         textViewRating = findViewById(R.id.textViewRating);
         textViewDescricao = findViewById(R.id.textViewDescricao);
         textViewCapacidade = findViewById(R.id.textViewCapacidade);
@@ -76,10 +81,11 @@ public class LocalDetailActivity extends AppCompatActivity {
         textViewProprietarioNome = findViewById(R.id.textViewProprietarioNome);
         textViewProprietarioEmail = findViewById(R.id.textViewProprietarioEmail);
         textViewProprietarioTelefone = findViewById(R.id.textViewProprietarioTelefone);
-        buttonReservar = findViewById(R.id.buttonReservar);
+        buttonReservar = findViewById(R.id.buttonReservar); // Botão na barra flutuante
+        textViewPrecoInferior = findViewById(R.id.textViewPrecoInferior); // TextView na barra flutuante
         buttonVoltar = findViewById(R.id.buttonVoltar);
         buttonFavorito = findViewById(R.id.buttonFavorito);
-        bottomNavigation = findViewById(R.id.bottomNavigation);
+        // bottomNavigation = findViewById(R.id.bottomNavigation); // REMOVIDO
         mapView = findViewById(R.id.mapView);
     }
 
@@ -123,6 +129,7 @@ public class LocalDetailActivity extends AppCompatActivity {
         textViewCategoria.setText(local.getCategoria());
         textViewEndereco.setText(local.getEndereco());
         textViewPreco.setText(local.getPrecoFormatado());
+        textViewPrecoInferior.setText(local.getPrecoFormatado()); // Define o preço na barra inferior
         textViewRating.setText(local.getRatingFormatado());
 
         if (local.getDescricao() != null && !local.getDescricao().isEmpty()) {
@@ -151,7 +158,7 @@ public class LocalDetailActivity extends AppCompatActivity {
 
         String imageUrl = local.getImageUrl();
         if (imageUrl != null && !imageUrl.isEmpty()) {
-            if (imageUrl.startsWith("http") || imageUrl.startsWith("https://")) {
+            if (imageUrl.startsWith("http") || imageUrl.startsWith("https")) {
                 Glide.with(this).load(imageUrl).into(imageViewLocal);
             } else {
                 try {
@@ -177,6 +184,9 @@ public class LocalDetailActivity extends AppCompatActivity {
 
     private void loadFavoriteStatus() {
         if (!firebaseManager.isLoggedIn() || local == null || local.getId() == null) {
+            // Define o ícone como borda e tint vermelho se estiver deslogado
+            buttonFavorito.setImageResource(R.drawable.ic_favorite_border);
+            buttonFavorito.setColorFilter(ContextCompat.getColor(this, R.color.red));
             return;
         }
 
@@ -187,8 +197,11 @@ public class LocalDetailActivity extends AppCompatActivity {
     }
 
     private void updateFavoriteButton() {
+        // Usa o drawable de borda (vazado) ou preenchido
         buttonFavorito.setImageResource(isFavorite ?
-                R.drawable.ic_favorite_filled : R.drawable.ic_favorite);
+                R.drawable.ic_favorite_filled : R.drawable.ic_favorite_border);
+        // Aplica o TINT vermelho em ambos os casos
+        buttonFavorito.setColorFilter(ContextCompat.getColor(this, R.color.red));
     }
 
     private void setupListeners() {
@@ -249,6 +262,11 @@ public class LocalDetailActivity extends AppCompatActivity {
                 return;
             }
 
+            if (local.getProprietarioId() == null) {
+                Toast.makeText(this, "Erro ao identificar proprietário", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String proprietarioId = local.getProprietarioId();
             String meuId = firebaseManager.getCurrentUserId();
 
@@ -256,8 +274,9 @@ public class LocalDetailActivity extends AppCompatActivity {
                 Toast.makeText(this, "Você não pode reservar seu próprio espaço", Toast.LENGTH_SHORT).show();
                 return;
             }
-
-            simularEnvioNotificacao(proprietarioId);
+            Intent intent = new Intent(this, ReservationActivity.class);
+            intent.putExtra("local", local);
+            startActivity(intent);
         });
     }
 
@@ -285,27 +304,6 @@ public class LocalDetailActivity extends AppCompatActivity {
                 Toast.makeText(LocalDetailActivity.this, "Reserva feita, mas falhou ao notificar proprietário.", Toast.LENGTH_SHORT).show();
                 buttonReservar.setEnabled(true);
             }
-        });
-    }
-
-    private void setupBottomNavigation() {
-        bottomNavigation.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == R.id.nav_home) {
-                startActivity(new Intent(this, MainActivity.class));
-                return true;
-            } else if (itemId == R.id.nav_favorites) {
-                startActivity(new Intent(this, FavoritesActivity.class));
-                return true;
-            } else if (itemId == R.id.nav_profile) {
-                if (firebaseManager.isLoggedIn()) {
-                    startActivity(new Intent(this, ProfileActivity.class));
-                } else {
-                    startActivity(new Intent(this, LoginActivity.class));
-                }
-                return true;
-            }
-            return false;
         });
     }
 

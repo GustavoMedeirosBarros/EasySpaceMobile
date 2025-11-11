@@ -1,38 +1,58 @@
 package com.example.easyspace.utils;
 
+import android.app.Activity;
 import android.content.Context;
-import android.net.Uri;
+import android.content.Intent;
 import android.util.Log;
+import android.widget.Toast;
 
-import com.example.easyspace.R;
+import androidx.annotation.NonNull;
+
+import com.example.easyspace.CompleteProfileActivity;
+import com.example.easyspace.MainActivity;
+import com.example.easyspace.R; // Importe o R
 import com.example.easyspace.models.Local;
 import com.example.easyspace.models.Notification;
+import com.example.easyspace.models.Reserva; // Adicionado
 import com.example.easyspace.models.Usuario;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.ApiException; // Adicionado
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.auth.UserProfileChangeRequest;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QueryDocumentSnapshot; // Adicionado
+import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
+import java.util.HashMap; // Adicionado
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class FirebaseManager {
-
     private FirebaseAuth auth;
     private FirebaseFirestore db;
     private GoogleSignInClient googleSignInClient;
+    private static final String USERS_COLLECTION = "usuarios"; // Corrigido para "usuarios"
+    private static final String LOCAIS_COLLECTION = "locais";
+    private static final String NOTIFICATIONS_COLLECTION = "notifications";
+    private static final String RESERVAS_COLLECTION = "reservas"; // Adicionado
 
     // --- INTERFACES DE CALLBACK ---
     public interface AuthCallback { void onSuccess(String userId); void onFailure(String error); }
@@ -44,9 +64,12 @@ public class FirebaseManager {
     public interface TaskCallback { void onSuccess(); void onFailure(String error); }
     public interface ProfileCompleteCallback { void onResult(boolean isComplete); }
     public interface FavoritesCallback { void onSuccess(List<Local> favorites); void onFailure(String error); }
-    public interface FavoriteStatusCallback { void onResult(boolean isFavorite); }
+    public interface FavoriteStatusCallback { void onResult(boolean isFavorite); } // Renomeado de IsFavoriteCallback
     public interface CountCallback { void onSuccess(int count); void onFailure(String error); }
     public interface NotificationsCallback { void onSuccess(List<Notification> notifications); void onFailure(String error); }
+    public interface ReservasCallback { void onSuccess(List<Reserva> reservas); void onFailure(String error); } // Adicionado
+    public interface PreferenciaCallback { void onSuccess(String preferenceId); void onFailure(String error); } // Adicionado
+
 
     // --- CONSTRUTOR ---
     public FirebaseManager() {
@@ -57,12 +80,13 @@ public class FirebaseManager {
     // --- MÉTODOS DE AUTENTICAÇÃO E PERFIL ---
     public void configureGoogleSignIn(Context context) {
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(context.getString(R.string.default_web_client_id))
+                .requestIdToken(context.getString(R.string.default_web_client_id)) // Use o string resource
                 .requestEmail()
                 .build();
         googleSignInClient = GoogleSignIn.getClient(context, gso);
     }
     public GoogleSignInClient getGoogleSignInClient() { return googleSignInClient; }
+
     public void signInWithGoogle(Task<GoogleSignInAccount> task, AuthCallback callback) {
         try {
             GoogleSignInAccount account = task.getResult(ApiException.class);
@@ -77,14 +101,17 @@ public class FirebaseManager {
                                 callback.onFailure(authTask.getException() != null ? authTask.getException().getMessage() : "Erro ao autenticar com Google");
                             }
                         });
+            } else {
+                callback.onFailure("Conta Google não encontrada");
             }
         } catch (ApiException e) {
             callback.onFailure("Erro ao processar login do Google: " + e.getMessage());
         }
     }
+
     private void checkAndCreateUserProfile(FirebaseUser firebaseUser, AuthCallback callback) {
         String userId = firebaseUser.getUid();
-        db.collection("usuarios").document(userId).get().addOnCompleteListener(task -> {
+        db.collection(USERS_COLLECTION).document(userId).get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 DocumentSnapshot document = task.getResult();
                 if (!document.exists()) {
@@ -94,7 +121,8 @@ public class FirebaseManager {
                     usuario.setEmail(firebaseUser.getEmail());
                     usuario.setFotoUrl(firebaseUser.getPhotoUrl() != null ? firebaseUser.getPhotoUrl().toString() : "");
                     usuario.setPessoaFisica(true);
-                    db.collection("usuarios").document(userId).set(usuario)
+                    usuario.setProfileComplete(false); // Novo usuário do Google precisa completar o perfil
+                    db.collection(USERS_COLLECTION).document(userId).set(usuario)
                             .addOnSuccessListener(aVoid -> callback.onSuccess(userId))
                             .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
                 } else {
@@ -105,6 +133,7 @@ public class FirebaseManager {
             }
         });
     }
+
     public void registerUser(String nome, String email, String senha, String telefone,
                              String documento, String cep, String cidade, String estado,
                              boolean isPessoaFisica, String endereco, String complemento,
@@ -115,6 +144,14 @@ public class FirebaseManager {
                 FirebaseUser firebaseUser = auth.getCurrentUser();
                 if (firebaseUser != null) {
                     String userId = firebaseUser.getUid();
+
+                    // Atualiza o display name no Auth
+                    UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                            .setDisplayName(nome)
+                            .build();
+                    firebaseUser.updateProfile(profileUpdates);
+
+                    // Cria o objeto no Firestore
                     Usuario usuario = new Usuario();
                     usuario.setId(userId);
                     usuario.setNome(nome);
@@ -125,13 +162,15 @@ public class FirebaseManager {
                     usuario.setCidade(cidade);
                     usuario.setEstado(estado);
                     usuario.setPessoaFisica(isPessoaFisica);
-                    usuario.setEndereco(endereco);
+                    usuario.setEndereco(endereco); // Este é o endereço completo/rua
                     usuario.setComplemento(complemento);
                     usuario.setBairro(bairro);
                     usuario.setDataNascimento(dataNascimento);
                     usuario.setGenero(genero);
                     usuario.setFotoUrl("");
-                    db.collection("usuarios").document(userId).set(usuario)
+                    usuario.setProfileComplete(true); // Perfil completo no registro
+
+                    db.collection(USERS_COLLECTION).document(userId).set(usuario)
                             .addOnSuccessListener(aVoid -> callback.onSuccess(userId))
                             .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
                 }
@@ -140,6 +179,7 @@ public class FirebaseManager {
             }
         });
     }
+
     public void loginUser(String email, String senha, AuthCallback callback) {
         auth.signInWithEmailAndPassword(email, senha).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
@@ -151,45 +191,56 @@ public class FirebaseManager {
             }
         });
     }
+
     public void getUserData(String userId, UserCallback callback) {
-        db.collection("usuarios").document(userId).get().addOnCompleteListener(task -> {
+        db.collection(USERS_COLLECTION).document(userId).get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 DocumentSnapshot document = task.getResult();
-                if (document.exists()) callback.onSuccess(document.toObject(Usuario.class));
+                if (document.exists()) {
+                    Usuario usuario = document.toObject(Usuario.class);
+                    if (usuario != null) {
+                        callback.onSuccess(usuario);
+                    } else {
+                        callback.onFailure("Erro ao mapear dados do usuário");
+                    }
+                }
                 else callback.onFailure("Usuário não encontrado");
             } else {
                 callback.onFailure(task.getException() != null ? task.getException().getMessage() : "Erro ao obter dados");
             }
         });
     }
-    public void getCurrentUserData(UserDataCallback callback) {
-        FirebaseUser currentUser = auth.getCurrentUser();
-        if (currentUser == null) {
-            callback.onFailure("Usuário não autenticado");
-            return;
-        }
-        db.collection("usuarios").document(currentUser.getUid()).get().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                DocumentSnapshot document = task.getResult();
-                if (document.exists()) callback.onSuccess(document.getData());
-                else callback.onFailure("Dados do usuário não encontrados");
-            } else {
-                callback.onFailure(task.getException() != null ? task.getException().getMessage() : "Erro ao obter dados");
-            }
-        });
-    }
-    public void updateUserProfile(String userId, Usuario usuario, AuthCallback callback) {
-        db.collection("usuarios").document(userId).set(usuario)
-                .addOnSuccessListener(aVoid -> callback.onSuccess(userId))
-                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
-    }
+
     public void updateUserData(String userId, Map<String, Object> data, UpdateCallback callback) {
-        db.collection("usuarios").document(userId).update(data)
+        db.collection(USERS_COLLECTION).document(userId).update(data)
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
                 .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
+
+    public void updateUserProfile(String userId, Usuario usuario, AuthCallback callback) {
+        if (userId == null || usuario == null) {
+            if (callback != null) callback.onFailure("Dados inválidos");
+            return;
+        }
+
+        // Atualiza o nome no Auth
+        FirebaseUser firebaseUser = auth.getCurrentUser();
+        if (firebaseUser != null && !Objects.equals(firebaseUser.getDisplayName(), usuario.getNome())) {
+            UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                    .setDisplayName(usuario.getNome())
+                    .build();
+            firebaseUser.updateProfile(profileUpdates);
+        }
+
+        // Atualiza no Firestore
+        db.collection(USERS_COLLECTION).document(userId)
+                .set(usuario) // Salva o objeto inteiro
+                .addOnSuccessListener(aVoid -> callback.onSuccess(userId))
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
     public void isProfileComplete(String userId, ProfileCompleteCallback callback) {
-        db.collection("usuarios").document(userId).get().addOnCompleteListener(task -> {
+        db.collection(USERS_COLLECTION).document(userId).get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 DocumentSnapshot document = task.getResult();
                 if (document.exists()) {
@@ -208,7 +259,7 @@ public class FirebaseManager {
             return;
         }
         String userId = user.getUid();
-        db.collection("usuarios").document(userId).update("favoritos", FieldValue.arrayUnion(localId))
+        db.collection(USERS_COLLECTION).document(userId).update("favoritos", FieldValue.arrayUnion(localId))
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
                 .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
@@ -219,18 +270,19 @@ public class FirebaseManager {
             return;
         }
         String userId = user.getUid();
-        db.collection("usuarios").document(userId).update("favoritos", FieldValue.arrayRemove(localId))
+        db.collection(USERS_COLLECTION).document(userId).update("favoritos", FieldValue.arrayRemove(localId))
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
                 .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
+
     public void isFavorite(String localId, FavoriteStatusCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
-        if (user == null) {
+        if (user == null || localId == null) {
             callback.onResult(false);
             return;
         }
         String userId = user.getUid();
-        db.collection("usuarios").document(userId).get().addOnCompleteListener(task -> {
+        db.collection(USERS_COLLECTION).document(userId).get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 DocumentSnapshot document = task.getResult();
                 if (document.exists()) {
@@ -240,6 +292,7 @@ public class FirebaseManager {
             } else callback.onResult(false);
         });
     }
+
     public void getUserFavorites(FavoritesCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
@@ -247,7 +300,7 @@ public class FirebaseManager {
             return;
         }
         String userId = user.getUid();
-        db.collection("usuarios").document(userId).get().addOnCompleteListener(task -> {
+        db.collection(USERS_COLLECTION).document(userId).get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 DocumentSnapshot document = task.getResult();
                 if (document.exists()) {
@@ -256,7 +309,17 @@ public class FirebaseManager {
                         callback.onSuccess(new ArrayList<>());
                         return;
                     }
-                    db.collection("locais").whereIn("id", favoritoIds).get().addOnCompleteListener(locaisTask -> {
+
+                    if (favoritoIds.size() > 30) {
+                        // Limitação do Firestore 'whereIn'
+                        List<String> subList = favoritoIds.subList(0, 30);
+                        db.collection(LOCAIS_COLLECTION).whereIn("id", subList).get().addOnCompleteListener(locaisTask -> {
+                            //... (mesma lógica abaixo)
+                        });
+                        // Idealmente, implementar paginação
+                    }
+
+                    db.collection(LOCAIS_COLLECTION).whereIn("id", favoritoIds).get().addOnCompleteListener(locaisTask -> {
                         if (locaisTask.isSuccessful()) {
                             List<Local> favoriteLocais = new ArrayList<>();
                             for (DocumentSnapshot localDoc : locaisTask.getResult()) {
@@ -281,21 +344,25 @@ public class FirebaseManager {
             return;
         }
         local.setProprietarioId(user.getUid());
-        db.collection("locais").add(local).addOnSuccessListener(documentReference -> {
-            local.setId(documentReference.getId());
-            documentReference.update("id", documentReference.getId())
-                    .addOnSuccessListener(aVoid -> callback.onSuccess())
-                    .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+
+        // Gera ID primeiro
+        DocumentReference localRef = db.collection(LOCAIS_COLLECTION).document();
+        local.setId(localRef.getId()); // Define o ID no objeto
+
+        localRef.set(local).addOnSuccessListener(aVoid -> {
+            callback.onSuccess();
         }).addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
+
     public void getLocalById(String localId, LocalCallback callback) {
-        db.collection("locais").document(localId).get().addOnSuccessListener(documentSnapshot -> {
+        db.collection(LOCAIS_COLLECTION).document(localId).get().addOnSuccessListener(documentSnapshot -> {
             if (documentSnapshot.exists()) callback.onSuccess(documentSnapshot.toObject(Local.class));
             else callback.onFailure("Local não encontrado");
         }).addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
+
     public void getLocaisByUserId(String userId, LocaisCallback callback) {
-        db.collection("locais").whereEqualTo("proprietarioId", userId).get().addOnSuccessListener(queryDocumentSnapshots -> {
+        db.collection(LOCAIS_COLLECTION).whereEqualTo("proprietarioId", userId).get().addOnSuccessListener(queryDocumentSnapshots -> {
             List<Local> locais = new ArrayList<>();
             for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                 locais.add(document.toObject(Local.class));
@@ -303,27 +370,25 @@ public class FirebaseManager {
             callback.onSuccess(locais);
         }).addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
+
     public void deleteLocal(String localId, TaskCallback callback) {
-        db.collection("locais").document(localId).delete()
+        db.collection(LOCAIS_COLLECTION).document(localId).delete()
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
                 .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
     public void getLocaisByFilter(String categoria, double minPreco, double maxPreco, LocaisCallback callback) {
-        Query query = db.collection("locais");
+        Query query = db.collection(LOCAIS_COLLECTION);
 
-        // 1. Filtro de Categoria (se houver)
         if (categoria != null && !categoria.isEmpty()) {
             query = query.whereEqualTo("categoria", categoria);
         }
 
-        // 2. Filtro de Preço
-        // O Firestore exige que o primeiro orderBy seja no campo da consulta de intervalo
         if (minPreco > 0) {
             query = query.orderBy("preco").whereGreaterThanOrEqualTo("preco", minPreco);
         }
-        if (maxPreco < 500) { // 500 é o máximo do slider
-            if (minPreco <= 0) { // Se não houver minPreco, precisamos adicionar o orderBy
+        if (maxPreco < 500) {
+            if (minPreco <= 0) {
                 query = query.orderBy("preco");
             }
             query = query.whereLessThanOrEqualTo("preco", maxPreco);
@@ -338,15 +403,12 @@ public class FirebaseManager {
         }).addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
-    // --- ESTE É O NOVO MÉTODO QUE A LOCAL LIST ACTIVITY USA ---
     public void getLocaisOrdenados(String sortByField, LocaisCallback callback) {
-        // Define a direção da ordenação. Para rating e viewCount, queremos DESCENDENTE.
-        // Para "recentes" (timestamp), também queremos DESCENDENTE.
         Query.Direction direction = Query.Direction.DESCENDING;
 
-        db.collection("locais")
+        db.collection(LOCAIS_COLLECTION)
                 .orderBy(sortByField, direction)
-                .limit(50) // Limita a 50 para a lista completa
+                .limit(50)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     List<Local> locais = new ArrayList<>();
@@ -358,31 +420,109 @@ public class FirebaseManager {
                 .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
+    // --- MÉTODOS DE RESERVA (ATUALIZADOS) ---
+
+    public void salvarReserva(Reserva reserva, TaskCallback callback) {
+        if (!isLoggedIn()) {
+            if (callback != null) callback.onFailure("Usuário não logado");
+            return;
+        }
+
+        String reservaId = db.collection(RESERVAS_COLLECTION).document().getId();
+        reserva.setId(reservaId);
+
+        db.collection(RESERVAS_COLLECTION).document(reservaId)
+                .set(reserva)
+                .addOnSuccessListener(aVoid -> {
+                    if (callback != null) callback.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onFailure(e.getMessage());
+                });
+    }
+
+    public void updateReservaStatus(String reservaId, String status, TaskCallback callback) {
+        if (reservaId == null) {
+            if (callback != null) callback.onFailure("ID da reserva nulo");
+            return;
+        }
+        db.collection(RESERVAS_COLLECTION).document(reservaId)
+                .update("status", status)
+                .addOnSuccessListener(aVoid -> {
+                    if (callback != null) callback.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onFailure(e.getMessage());
+                });
+    }
+
+    public void deleteReserva(String reservaId, TaskCallback callback) {
+        if (reservaId == null) {
+            if (callback != null) callback.onFailure("ID da reserva nulo");
+            return;
+        }
+        db.collection(RESERVAS_COLLECTION).document(reservaId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    if (callback != null) callback.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onFailure(e.getMessage());
+                });
+    }
+
+    public void getUserReservas(ReservasCallback callback) {
+        if (!isLoggedIn()) {
+            if (callback != null) callback.onFailure("Usuário não logado");
+            return;
+        }
+        String userId = getCurrentUserId();
+
+        db.collection(RESERVAS_COLLECTION)
+                .whereEqualTo("usuarioId", userId)
+                .orderBy("dataInicio", Query.Direction.DESCENDING)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Reserva> reservas = new ArrayList<>();
+                    for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
+                        Reserva reserva = document.toObject(Reserva.class);
+                        if (reserva != null) {
+                            reservas.add(reserva);
+                        }
+                    }
+                    if (callback != null) callback.onSuccess(reservas);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onFailure(e.getMessage());
+                });
+    }
 
     // --- MÉTODOS DE CONTAGEM (PERFIL) ---
     public void getUserListingCount(String userId, CountCallback callback) {
-        db.collection("locais").whereEqualTo("proprietarioId", userId).get()
+        db.collection(LOCAIS_COLLECTION).whereEqualTo("proprietarioId", userId).get()
                 .addOnSuccessListener(q -> callback.onSuccess(q.size()))
                 .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
     public void getUserReservationCount(String userId, CountCallback callback) {
-        db.collection("reservas").whereEqualTo("usuarioId", userId).get()
+        db.collection(RESERVAS_COLLECTION).whereEqualTo("usuarioId", userId).get()
                 .addOnSuccessListener(q -> callback.onSuccess(q.size()))
                 .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
-    // --- MÉTODOS DE NOTIFICAÇÃO ---
+    // --- MÉTODOS DE NOTIFICAÇÃO (CORRIGIDO) ---
     public void updateFcmToken(String token) {
         if (isLoggedIn()) {
             String userId = getCurrentUserId();
             if (userId == null) return;
-            db.collection("usuarios").document(userId).update("fcmToken", token)
+            db.collection(USERS_COLLECTION).document(userId).update("fcmToken", token)
                     .addOnSuccessListener(aVoid -> Log.d("FirebaseManager", "FCM Token updated"))
                     .addOnFailureListener(e -> Log.e("FirebaseManager", "Error updating FCM Token", e));
         }
     }
+
     public void getUserNotifications(String userId, NotificationsCallback callback) {
-        db.collection("usuarios").document(userId).collection("notifications")
+        // As notificações agora estão aninhadas dentro do usuário
+        db.collection(USERS_COLLECTION).document(userId).collection(NOTIFICATIONS_COLLECTION)
                 .orderBy("timestamp", Query.Direction.DESCENDING).get()
                 .addOnSuccessListener(q -> {
                     List<Notification> notifications = new ArrayList<>();
@@ -396,13 +536,27 @@ public class FirebaseManager {
                     callback.onSuccess(notifications);
                 }).addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
+
     public void sendInAppNotification(String userId, String title, String message, TaskCallback callback) {
-        String id = db.collection("usuarios").document(userId).collection("notifications").document().getId();
+        if (userId == null) {
+            if (callback != null) callback.onFailure("ID de usuário nulo");
+            return;
+        }
+
+        // Esta é a subcoleção correta
+        String id = db.collection(USERS_COLLECTION).document(userId).collection(NOTIFICATIONS_COLLECTION).document().getId();
+
+        // Esta chamada (String, String, String, long, boolean) CORRESPONDE ao Notification.java
         Notification n = new Notification(title, message, "booking", System.currentTimeMillis(), false);
         n.setId(id);
-        db.collection("usuarios").document(userId).collection("notifications").document(id).set(n)
-                .addOnSuccessListener(aVoid -> callback.onSuccess())
-                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+
+        db.collection(USERS_COLLECTION).document(userId).collection(NOTIFICATIONS_COLLECTION).document(id).set(n)
+                .addOnSuccessListener(aVoid -> {
+                    if (callback != null) callback.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onFailure(e.getMessage());
+                });
     }
 
     // --- MÉTODOS GERAIS ---
@@ -410,10 +564,27 @@ public class FirebaseManager {
         auth.signOut();
         if (googleSignInClient != null) googleSignInClient.signOut();
     }
+
     public boolean isLoggedIn() { return auth.getCurrentUser() != null; }
+
     public String getCurrentUserId() {
         FirebaseUser user = auth.getCurrentUser();
         return user != null ? user.getUid() : null;
     }
+
     public FirebaseUser getCurrentUser() { return auth.getCurrentUser(); }
+
+    public void atualizarStatusReserva(String reservaId, String status, TaskCallback callback) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("status", status);
+        updates.put("dataAtualizacao", FieldValue.serverTimestamp());
+
+        db.collection("reservas")
+                .document(reservaId)
+                .update(updates)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
 }

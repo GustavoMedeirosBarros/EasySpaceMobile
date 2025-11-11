@@ -372,31 +372,46 @@
 
             </LinearLayout>
 
+        </LinearLayout>
+
+    </ScrollView>
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@color/white"
+        app:cardElevation="8dp"
+        app:strokeWidth="1dp"
+        app:strokeColor="@color/divider">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/textViewPrecoInferior"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="R$ 0,00 / hora"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary" />
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonReservar"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_margin="20dp"
-                android:text="Reservar Agora"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reservar"
                 android:textSize="16sp"
                 android:textAllCaps="false"
                 app:backgroundTint="@color/primary"
                 app:cornerRadius="8dp" />
 
         </LinearLayout>
-
-    </ScrollView>
-
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNavigation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:background="@android:color/white"
-        android:elevation="8dp"
-        app:itemIconTint="@color/bottom_nav_color"
-        app:itemTextColor="@color/bottom_nav_color"
-        app:labelVisibilityMode="labeled"
-        app:menu="@menu/bottom_navigation_menu" />
+    </com.google.android.material.card.MaterialCardView>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

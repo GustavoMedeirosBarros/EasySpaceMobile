@@ -11,6 +11,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.easyspace.utils.FirebaseManager;
+import com.example.easyspace.utils.MaskTextWatcher;
 import com.example.easyspace.utils.ValidationUtils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
@@ -54,14 +55,19 @@ public class CompleteProfileActivity extends AppCompatActivity {
     private void setupListeners() {
         buttonConcluir.setOnClickListener(v -> salvarDadosAdicionais());
 
+        editTextTelefone.addTextChangedListener(new MaskTextWatcher(editTextTelefone, "(##) #####-####"));
+        editTextCEP.addTextChangedListener(new MaskTextWatcher(editTextCEP, "#####-###"));
+        editTextCPF.addTextChangedListener(new MaskTextWatcher(editTextCPF, "###.###.###-##"));
+
         editTextCEP.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (s.length() == 8) {
-                    buscarCEP(s.toString());
+                String cep = MaskTextWatcher.unmask(s.toString());
+                if (cep.length() == 8) {
+                    buscarCEP(cep);
                 }
             }
 
@@ -96,15 +102,15 @@ public class CompleteProfileActivity extends AppCompatActivity {
     }
 
     private void salvarDadosAdicionais() {
-        String telefone = editTextTelefone.getText().toString().trim();
-        String cep = editTextCEP.getText().toString().trim();
+        String telefone = MaskTextWatcher.unmask(editTextTelefone.getText().toString().trim());
+        String cep = MaskTextWatcher.unmask(editTextCEP.getText().toString().trim());
+        String cpf = MaskTextWatcher.unmask(editTextCPF.getText().toString().trim());
         String rua = ValidationUtils.sanitizeInput(editTextRua.getText().toString().trim());
         String numero = ValidationUtils.sanitizeInput(editTextNumero.getText().toString().trim());
         String complemento = ValidationUtils.sanitizeInput(editTextComplemento.getText().toString().trim());
         String bairro = ValidationUtils.sanitizeInput(editTextBairro.getText().toString().trim());
         String cidade = ValidationUtils.sanitizeInput(editTextCidade.getText().toString().trim());
         String estado = ValidationUtils.sanitizeInput(editTextEstado.getText().toString().trim());
-        String cpf = editTextCPF.getText().toString().trim();
 
         if (telefone.isEmpty()) {
             editTextTelefone.setError("Telefone é obrigatório");

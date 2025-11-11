@@ -1,38 +1,30 @@
 package com.example.easyspace.adapters;
 
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Color; // Importe Color
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat; // Importe ContextCompat
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.bumptech.glide.Glide;
+import com.example.easyspace.LocalDetailActivity;
 import com.example.easyspace.R;
 import com.example.easyspace.models.Reserva;
-import com.google.android.material.card.MaterialCardView;
-import com.google.android.material.chip.Chip;
-
-import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
 import java.util.List;
-import java.util.Locale;
 
 public class ReservaAdapter extends RecyclerView.Adapter<ReservaAdapter.ReservaViewHolder> {
 
     private Context context;
-    private List<Reserva> reservas;
-    private SimpleDateFormat dateFormat;
-    private NumberFormat currencyFormat;
+    private List<Reserva> reservasList;
 
-    public ReservaAdapter(Context context, List<Reserva> reservas) {
+    public ReservaAdapter(Context context, List<Reserva> reservasList) {
         this.context = context;
-        this.reservas = reservas;
-        this.dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", new Locale("pt", "BR"));
-        this.currencyFormat = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
+        this.reservasList = reservasList;
     }
 
     @NonNull
@@ -44,93 +36,69 @@ public class ReservaAdapter extends RecyclerView.Adapter<ReservaAdapter.ReservaV
 
     @Override
     public void onBindViewHolder(@NonNull ReservaViewHolder holder, int position) {
-        Reserva reserva = reservas.get(position);
+        Reserva reserva = reservasList.get(position);
+        if (reserva == null) return; // Verificação de segurança
 
-        holder.textViewLocalNome.setText(reserva.getLocalNome());
-        holder.textViewValor.setText(currencyFormat.format(reserva.getValorTotal()));
+        holder.textViewNomeLocal.setText(reserva.getLocalNome());
+        holder.textViewDatas.setText(reserva.getDatasFormatadas());
+        holder.textViewStatus.setText(reserva.getStatusFormatado());
+        holder.textViewPreco.setText(reserva.getPrecoTotalFormatado());
 
-        if (reserva.getDataInicio() != null) {
-            holder.textViewDataInicio.setText("Início: " + dateFormat.format(reserva.getDataInicio()));
+        // Define a cor do status
+        if ("confirmed".equals(reserva.getStatus())) {
+            holder.textViewStatus.setTextColor(ContextCompat.getColor(context, R.color.success));
+        } else if ("pending".equals(reserva.getStatus())) {
+            holder.textViewStatus.setTextColor(ContextCompat.getColor(context, R.color.primary_dark));
+        } else { // "cancelled", "failed", etc.
+            holder.textViewStatus.setTextColor(ContextCompat.getColor(context, R.color.error));
         }
 
-        if (reserva.getDataFim() != null) {
-            holder.textViewDataFim.setText("Fim: " + dateFormat.format(reserva.getDataFim()));
+        String imageUrl = reserva.getLocalImageUrl();
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            if (imageUrl.startsWith("http") || imageUrl.startsWith("https")) {
+                Glide.with(context).load(imageUrl).centerCrop().into(holder.imageViewLocal);
+            } else {
+                try {
+                    byte[] decodedString = android.util.Base64.decode(imageUrl, android.util.Base64.DEFAULT);
+                    Glide.with(context).load(decodedString).centerCrop().into(holder.imageViewLocal);
+                } catch (Exception e) {
+                    holder.imageViewLocal.setImageResource(R.drawable.ic_default_space);
+                }
+            }
+        } else {
+            holder.imageViewLocal.setImageResource(R.drawable.ic_default_space);
         }
 
-        holder.textViewPessoas.setText(reserva.getQuantidadePessoas() + " pessoas");
-
-        holder.chipStatus.setText(getStatusText(reserva.getStatus()));
-        holder.chipStatus.setChipBackgroundColorResource(getStatusColor(reserva.getStatus()));
-
-        if (reserva.getLocalImageUrl() != null && !reserva.getLocalImageUrl().isEmpty()) {
-            Glide.with(context)
-                    .load(reserva.getLocalImageUrl())
-                    .centerCrop()
-                        .placeholder(R.drawable.ic_placeholder)
-                    .into(holder.imageViewLocal);
-        }
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, LocalDetailActivity.class);
+            intent.putExtra("localId", reserva.getLocalId());
+            context.startActivity(intent);
+        });
     }
 
     @Override
     public int getItemCount() {
-        return reservas.size();
+        return reservasList != null ? reservasList.size() : 0;
     }
 
-    public void updateData(List<Reserva> newReservas) {
-        this.reservas = newReservas;
+    // NOVO MÉTODO: Para atualizar a lista filtrada
+    public void updateData(List<Reserva> novasReservas) {
+        this.reservasList.clear();
+        this.reservasList.addAll(novasReservas);
         notifyDataSetChanged();
     }
 
-    private String getStatusText(String status) {
-        switch (status) {
-            case "pendente":
-                return "Pendente";
-            case "confirmada":
-                return "Confirmada";
-            case "cancelada":
-                return "Cancelada";
-            case "concluida":
-                return "Concluída";
-            default:
-                return status;
-        }
-    }
-
-    private int getStatusColor(String status) {
-        switch (status) {
-            case "pendente":
-                return R.color.primary;
-            case "confirmada":
-                return R.color.success;
-            case "cancelada":
-                return R.color.error;
-            case "concluida":
-                return R.color.text_secondary;
-            default:
-                return R.color.text_secondary;
-        }
-    }
-
-    static class ReservaViewHolder extends RecyclerView.ViewHolder {
-        MaterialCardView cardView;
+    public static class ReservaViewHolder extends RecyclerView.ViewHolder {
         ImageView imageViewLocal;
-        TextView textViewLocalNome;
-        TextView textViewDataInicio;
-        TextView textViewDataFim;
-        TextView textViewValor;
-        TextView textViewPessoas;
-        Chip chipStatus;
+        TextView textViewNomeLocal, textViewDatas, textViewStatus, textViewPreco;
 
         public ReservaViewHolder(@NonNull View itemView) {
             super(itemView);
-            cardView = (MaterialCardView) itemView;
             imageViewLocal = itemView.findViewById(R.id.imageViewLocal);
-            textViewLocalNome = itemView.findViewById(R.id.textViewLocalNome);
-            textViewDataInicio = itemView.findViewById(R.id.textViewDataInicio);
-            textViewDataFim = itemView.findViewById(R.id.textViewDataFim);
-            textViewValor = itemView.findViewById(R.id.textViewValor);
-            textViewPessoas = itemView.findViewById(R.id.textViewPessoas);
-            chipStatus = itemView.findViewById(R.id.chipStatus);
+            textViewNomeLocal = itemView.findViewById(R.id.textViewNomeLocal);
+            textViewDatas = itemView.findViewById(R.id.textViewDatas);
+            textViewStatus = itemView.findViewById(R.id.textViewStatus);
+            textViewPreco = itemView.findViewById(R.id.textViewPreco);
         }
     }
 }

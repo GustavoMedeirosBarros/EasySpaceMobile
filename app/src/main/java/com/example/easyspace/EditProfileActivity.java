@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.text.TextWatcher;
 import android.util.Base64;
 import android.view.View;
 import android.widget.ImageView;
@@ -24,6 +25,7 @@ import androidx.core.content.ContextCompat;
 import com.bumptech.glide.Glide;
 import com.example.easyspace.models.Usuario;
 import com.example.easyspace.utils.FirebaseManager;
+import com.example.easyspace.utils.MaskTextWatcher;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
@@ -49,6 +51,9 @@ public class EditProfileActivity extends AppCompatActivity {
 
     private ActivityResultLauncher<Intent> imagePickerLauncher;
     private ActivityResultLauncher<String> permissionLauncher;
+
+    private TextWatcher telefoneWatcher;
+    private TextWatcher cepWatcher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +82,8 @@ public class EditProfileActivity extends AppCompatActivity {
         editTextEstado = findViewById(R.id.editTextEstado);
         buttonSalvar = findViewById(R.id.buttonSalvar);
         progressBar = findViewById(R.id.progressBar);
+        telefoneWatcher = new MaskTextWatcher(editTextTelefone, "(##) #####-####");
+        cepWatcher = new MaskTextWatcher(editTextCEP, "#####-###");
     }
 
     private void setupToolbar() {
@@ -118,6 +125,9 @@ public class EditProfileActivity extends AppCompatActivity {
     private void setupListeners() {
         textViewAlterarFoto.setOnClickListener(v -> checkPermissionAndPickImage());
         buttonSalvar.setOnClickListener(v -> salvarAlteracoes());
+
+        editTextTelefone.addTextChangedListener(telefoneWatcher);
+        editTextCEP.addTextChangedListener(cepWatcher);
     }
 
     private void checkPermissionAndPickImage() {
@@ -165,19 +175,25 @@ public class EditProfileActivity extends AppCompatActivity {
 
     private void populateUserData() {
         if (currentUser == null) return;
+        editTextTelefone.removeTextChangedListener(telefoneWatcher);
+        editTextCEP.removeTextChangedListener(cepWatcher);
 
         editTextNome.setText(currentUser.getNome());
         editTextEmail.setText(currentUser.getEmail());
         editTextTelefone.setText(currentUser.getTelefone());
         editTextCEP.setText(currentUser.getCep());
         editTextEndereco.setText(currentUser.getEndereco());
-        editTextBairro.setText(currentUser.getBairro());
-        editTextCidade.setText(currentUser.getCidade());
-        editTextEstado.setText(currentUser.getEstado());
-
         String fotoUrl = currentUser.getFotoUrl();
         String nome = currentUser.getNome();
 
+        if (currentUser.getRua() != null && !currentUser.getRua().isEmpty()) {
+            editTextEndereco.setText(currentUser.getRua());
+        } else {
+            editTextEndereco.setText(currentUser.getEndereco());
+        }
+        editTextBairro.setText(currentUser.getBairro());
+        editTextCidade.setText(currentUser.getCidade());
+        editTextEstado.setText(currentUser.getEstado());
         if (fotoUrl != null && !fotoUrl.isEmpty()) {
             textViewIniciaisEdit.setVisibility(View.GONE);
             imageViewEditFoto.setVisibility(View.VISIBLE);
@@ -198,6 +214,8 @@ public class EditProfileActivity extends AppCompatActivity {
         } else {
             showFallbackInitials(nome);
         }
+        editTextTelefone.addTextChangedListener(telefoneWatcher);
+        editTextCEP.addTextChangedListener(cepWatcher);
     }
 
     private void showFallbackInitials(String nome) {
@@ -229,6 +247,9 @@ public class EditProfileActivity extends AppCompatActivity {
             return;
         }
 
+        String telefoneLimpo = MaskTextWatcher.unmask(editTextTelefone.getText().toString().trim());
+        String cepLimpo = MaskTextWatcher.unmask(editTextCEP.getText().toString().trim());
+
         if (imageUri != null) {
             try {
                 InputStream inputStream = getContentResolver().openInputStream(imageUri);
@@ -245,12 +266,16 @@ public class EditProfileActivity extends AppCompatActivity {
         } else {
             updateTextData();
         }
+        currentUser.setTelefone(telefoneLimpo);
+        currentUser.setCep(cepLimpo);
+
+        updateTextData();
     }
 
     private void updateTextData() {
         String nome = editTextNome.getText().toString().trim();
-        String telefone = editTextTelefone.getText().toString().trim();
-        String cep = editTextCEP.getText().toString().trim();
+        String telefone = MaskTextWatcher.unmask(editTextTelefone.getText().toString().trim());
+        String cep = MaskTextWatcher.unmask(editTextCEP.getText().toString().trim());
         String endereco = editTextEndereco.getText().toString().trim();
         String bairro = editTextBairro.getText().toString().trim();
         String cidade = editTextCidade.getText().toString().trim();
@@ -260,6 +285,7 @@ public class EditProfileActivity extends AppCompatActivity {
         currentUser.setTelefone(telefone);
         currentUser.setCep(cep);
         currentUser.setEndereco(endereco);
+        currentUser.setRua(endereco);
         currentUser.setBairro(bairro);
         currentUser.setCidade(cidade);
         currentUser.setEstado(estado);

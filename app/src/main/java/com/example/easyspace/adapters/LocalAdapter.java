@@ -104,7 +104,7 @@ public class LocalAdapter extends RecyclerView.Adapter<LocalAdapter.LocalViewHol
 
         boolean isFavorite = local.getId() != null && favoritesSet.contains(local.getId());
         holder.buttonFavorite.setImageResource(isFavorite ?
-                R.drawable.ic_favorite_filled : R.drawable.ic_favorite);
+                R.drawable.ic_favorite_filled : R.drawable.ic_favorite_border);
 
         holder.buttonFavorite.setOnClickListener(v -> {
             if (!firebaseManager.isLoggedIn()) {

@@ -29,6 +29,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import com.example.easyspace.models.Local;
+import com.example.easyspace.utils.MaskTextWatcher;
 import com.example.easyspace.utils.ValidationUtils;
 import com.example.easyspace.utils.FirebaseManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -145,10 +146,10 @@ public class CriarAnuncioActivity extends AppCompatActivity {
 
     private void setupListeners() {
         buttonVoltar.setOnClickListener(v -> finish());
-
         buttonPublicar.setOnClickListener(v -> publicarAnuncio());
-
         cardAddFoto.setOnClickListener(v -> checkPermissionAndPickImage());
+
+        editTextCEP.addTextChangedListener(new MaskTextWatcher(editTextCEP, "#####-###"));
 
         editTextCEP.addTextChangedListener(new TextWatcher() {
             @Override
@@ -156,8 +157,9 @@ public class CriarAnuncioActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (s.length() == 8) {
-                    buscarCEP(s.toString());
+                String cep = MaskTextWatcher.unmask(s.toString());
+                if (cep.length() == 8) {
+                    buscarCEP(cep);
                 }
             }
 
@@ -305,7 +307,7 @@ public class CriarAnuncioActivity extends AppCompatActivity {
         String bairro = editTextBairro.getText().toString().trim();
         String cidade = editTextCidade.getText().toString().trim();
         String estado = editTextEstado.getText().toString().trim();
-        String cep = editTextCEP.getText().toString().trim();
+        String cep = MaskTextWatcher.unmask(editTextCEP.getText().toString().trim());
         String precoStr = editTextPreco.getText().toString().trim();
         String capacidadeStr = editTextCapacidade.getText().toString().trim();
         String horario = editTextHorario.getText().toString().trim();

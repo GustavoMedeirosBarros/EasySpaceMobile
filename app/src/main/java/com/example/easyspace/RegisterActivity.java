@@ -17,6 +17,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.easyspace.utils.FirebaseManager;
+import com.example.easyspace.utils.MaskTextWatcher;
 import com.example.easyspace.utils.ValidationUtils;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -44,6 +45,9 @@ public class RegisterActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private BottomNavigationView bottomNavigationView;
     private FirebaseManager firebaseManager;
+
+    private TextWatcher cpfWatcher;
+    private TextWatcher cnpjWatcher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,6 +87,8 @@ public class RegisterActivity extends AppCompatActivity {
         imageViewClose = findViewById(R.id.imageViewClose);
         progressBar = findViewById(R.id.progressBar);
         bottomNavigationView = findViewById(R.id.bottomNavigation);
+        cpfWatcher = new MaskTextWatcher(editTextDocumento, "###.###.###-##");
+        cnpjWatcher = new MaskTextWatcher(editTextDocumento, "##.###.###/####-##");
     }
 
     private void setupListeners() {
@@ -96,12 +102,25 @@ public class RegisterActivity extends AppCompatActivity {
         buttonGoogleRegister.setOnClickListener(v -> signInWithGoogle());
 
         radioGroupTipoUsuario.setOnCheckedChangeListener((group, checkedId) -> {
+            editTextDocumento.getText().clear();
+
+            editTextDocumento.removeTextChangedListener(cpfWatcher);
+            editTextDocumento.removeTextChangedListener(cnpjWatcher);
+
             if (checkedId == R.id.radioButtonPessoaFisica) {
                 editTextDocumento.setHint("CPF");
+                editTextDocumento.addTextChangedListener(cpfWatcher);
             } else {
                 editTextDocumento.setHint("CNPJ");
+                editTextDocumento.addTextChangedListener(cnpjWatcher);
             }
         });
+
+        editTextDocumento.addTextChangedListener(new MaskTextWatcher(editTextDocumento, "###.###.###-##"));
+
+        editTextTelefone.addTextChangedListener(new MaskTextWatcher(editTextTelefone, "(##) #####-####"));
+
+        editTextCEP.addTextChangedListener(new MaskTextWatcher(editTextCEP, "#####-###"));
 
         editTextDataNascimento.setOnClickListener(v -> showDatePicker());
 
@@ -111,7 +130,7 @@ public class RegisterActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                String cep = s.toString().replaceAll("[^0-9]", "");
+                String cep = MaskTextWatcher.unmask(s.toString());
                 if (cep.length() == 8) {
                     buscarCEP(cep);
                 }
@@ -224,9 +243,9 @@ public class RegisterActivity extends AppCompatActivity {
         String email = ValidationUtils.sanitizeInput(editTextEmail.getText().toString().trim().toLowerCase());
         String senha = editTextSenha.getText().toString();
         String confirmarSenha = editTextConfirmarSenha.getText().toString();
-        String telefone = ValidationUtils.sanitizeInput(editTextTelefone.getText().toString().trim());
-        String documento = ValidationUtils.sanitizeInput(editTextDocumento.getText().toString().trim());
-        String cep = ValidationUtils.sanitizeInput(editTextCEP.getText().toString().trim());
+        String telefone = MaskTextWatcher.unmask(editTextTelefone.getText().toString().trim());
+        String documento = MaskTextWatcher.unmask(editTextDocumento.getText().toString().trim());
+        String cep = MaskTextWatcher.unmask(editTextCEP.getText().toString().trim());
         String cidade = ValidationUtils.sanitizeInput(editTextCidade.getText().toString().trim());
         String estado = ValidationUtils.sanitizeInput(editTextEstado.getText().toString().trim());
         String endereco = ValidationUtils.sanitizeInput(editTextEndereco.getText().toString().trim());
