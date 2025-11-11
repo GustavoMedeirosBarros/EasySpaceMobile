@@ -106,10 +106,22 @@ public class MainActivity extends AppCompatActivity implements CategoriaAdapter.
     private void setupBottomNavigation() {
         bottomNavigation.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
+
             if (itemId == R.id.nav_home) {
                 return true;
             } else if (itemId == R.id.nav_favorites) {
                 startActivity(new Intent(this, FavoritesActivity.class));
+                return true;
+            } else if (itemId == R.id.nav_criar_anuncio) {
+                if (firebaseManager.isLoggedIn()) {
+                    startActivity(new Intent(this, CriarAnuncioActivity.class));
+                } else {
+                    Toast.makeText(this, "Você precisa estar logado para criar um anúncio.", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(this, LoginActivity.class));
+                }
+                return true;
+            } else if (itemId == R.id.nav_reservations) {
+                startActivity(new Intent(this, MinhasReservasActivity.class));
                 return true;
             } else if (itemId == R.id.nav_profile) {
                 if (firebaseManager.isLoggedIn()) {

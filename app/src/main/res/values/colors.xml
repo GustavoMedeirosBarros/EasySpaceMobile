@@ -32,4 +32,7 @@
     <color name="background_light">#FAFAFA</color>
     <color name="background_card">#FFFFFF</color>
     <color name="icon_tint_unselected">#9E9E9E</color>
+
+    <color name="black">#FF000000</color>
+    <color name="grey_300">#E0E0E0</color>
 </resources>

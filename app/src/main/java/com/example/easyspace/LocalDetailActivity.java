@@ -36,8 +36,8 @@ public class LocalDetailActivity extends AppCompatActivity {
     private TextView textViewPreco, textViewRating, textViewDescricao;
     private TextView textViewCapacidade, textViewHorario, textViewComodidades;
     private TextView textViewProprietarioNome, textViewProprietarioEmail, textViewProprietarioTelefone;
-    private TextView textViewPrecoInferior; // TextView da barra flutuante
-    private MaterialButton buttonReservar; // Botão da barra flutuante
+    private TextView textViewPrecoInferior;
+    private MaterialButton buttonReservar;
     private ImageButton buttonVoltar, buttonFavorito;
     private MapView mapView;
     private FirebaseFirestore db;
@@ -49,13 +49,9 @@ public class LocalDetailActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // --- CORREÇÃO DO ERRO DO MAPA (OSMDroid) ---
-        // Isso deve ser chamado ANTES de setContentView()
         Configuration.getInstance().load(getApplicationContext(),
                 PreferenceManager.getDefaultSharedPreferences(getApplicationContext()));
-        // Define o cache para um local seguro dentro do app (corrige o erro 'avc: denied')
         Configuration.getInstance().setOsmdroidTileCache(getCacheDir());
-        // ---------------------------------------------
 
         setContentView(R.layout.activity_local_detail);
         db = FirebaseFirestore.getInstance();
@@ -63,7 +59,6 @@ public class LocalDetailActivity extends AppCompatActivity {
         initViews();
         loadLocalData();
         setupListeners();
-        // setupBottomNavigation(); // REMOVIDO
         setupMap();
     }
 
@@ -72,7 +67,7 @@ public class LocalDetailActivity extends AppCompatActivity {
         textViewNome = findViewById(R.id.textViewNome);
         textViewCategoria = findViewById(R.id.textViewCategoria);
         textViewEndereco = findViewById(R.id.textViewEndereco);
-        textViewPreco = findViewById(R.id.textViewPreco); // Preço no corpo do scroll
+        textViewPreco = findViewById(R.id.textViewPreco);
         textViewRating = findViewById(R.id.textViewRating);
         textViewDescricao = findViewById(R.id.textViewDescricao);
         textViewCapacidade = findViewById(R.id.textViewCapacidade);
@@ -81,11 +76,10 @@ public class LocalDetailActivity extends AppCompatActivity {
         textViewProprietarioNome = findViewById(R.id.textViewProprietarioNome);
         textViewProprietarioEmail = findViewById(R.id.textViewProprietarioEmail);
         textViewProprietarioTelefone = findViewById(R.id.textViewProprietarioTelefone);
-        buttonReservar = findViewById(R.id.buttonReservar); // Botão na barra flutuante
-        textViewPrecoInferior = findViewById(R.id.textViewPrecoInferior); // TextView na barra flutuante
+        buttonReservar = findViewById(R.id.buttonReservar);
+        textViewPrecoInferior = findViewById(R.id.textViewPrecoInferior);
         buttonVoltar = findViewById(R.id.buttonVoltar);
         buttonFavorito = findViewById(R.id.buttonFavorito);
-        // bottomNavigation = findViewById(R.id.bottomNavigation); // REMOVIDO
         mapView = findViewById(R.id.mapView);
     }
 
@@ -129,7 +123,7 @@ public class LocalDetailActivity extends AppCompatActivity {
         textViewCategoria.setText(local.getCategoria());
         textViewEndereco.setText(local.getEndereco());
         textViewPreco.setText(local.getPrecoFormatado());
-        textViewPrecoInferior.setText(local.getPrecoFormatado()); // Define o preço na barra inferior
+        textViewPrecoInferior.setText(local.getPrecoFormatado());
         textViewRating.setText(local.getRatingFormatado());
 
         if (local.getDescricao() != null && !local.getDescricao().isEmpty()) {
@@ -184,7 +178,7 @@ public class LocalDetailActivity extends AppCompatActivity {
 
     private void loadFavoriteStatus() {
         if (!firebaseManager.isLoggedIn() || local == null || local.getId() == null) {
-            // Define o ícone como borda e tint vermelho se estiver deslogado
+
             buttonFavorito.setImageResource(R.drawable.ic_favorite_border);
             buttonFavorito.setColorFilter(ContextCompat.getColor(this, R.color.red));
             return;
@@ -197,10 +191,8 @@ public class LocalDetailActivity extends AppCompatActivity {
     }
 
     private void updateFavoriteButton() {
-        // Usa o drawable de borda (vazado) ou preenchido
         buttonFavorito.setImageResource(isFavorite ?
                 R.drawable.ic_favorite_filled : R.drawable.ic_favorite_border);
-        // Aplica o TINT vermelho em ambos os casos
         buttonFavorito.setColorFilter(ContextCompat.getColor(this, R.color.red));
     }
 

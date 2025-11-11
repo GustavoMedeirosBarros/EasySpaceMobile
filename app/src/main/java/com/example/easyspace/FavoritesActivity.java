@@ -67,8 +67,6 @@ public class FavoritesActivity extends AppCompatActivity {
     }
 
     private void setupBottomNavigation() {
-        bottomNavigation.setSelectedItemId(R.id.nav_favorites);
-
         bottomNavigation.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
 
@@ -76,6 +74,17 @@ public class FavoritesActivity extends AppCompatActivity {
                 startActivity(new Intent(this, MainActivity.class));
                 return true;
             } else if (itemId == R.id.nav_favorites) {
+                return true;
+            } else if (itemId == R.id.nav_criar_anuncio) {
+                if (firebaseManager.isLoggedIn()) {
+                    startActivity(new Intent(this, CriarAnuncioActivity.class));
+                } else {
+                    Toast.makeText(this, "Você precisa estar logado para criar um anúncio.", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(this, LoginActivity.class));
+                }
+                return true;
+            } else if (itemId == R.id.nav_reservations) {
+                startActivity(new Intent(this, MinhasReservasActivity.class));
                 return true;
             } else if (itemId == R.id.nav_profile) {
                 if (firebaseManager.isLoggedIn()) {
@@ -85,7 +94,6 @@ public class FavoritesActivity extends AppCompatActivity {
                 }
                 return true;
             }
-
             return false;
         });
     }

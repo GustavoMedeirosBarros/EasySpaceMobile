@@ -27,10 +27,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.EasySpace">
         <activity
-            android:name=".PaymentStripeActivity"
-            android:exported="false" />
-        <activity
-            android:name=".PaymentWebViewActivity"
+            android:name=".MockPaymentActivity"
             android:exported="false" />
         <activity
             android:name=".ConfirmationActivity"

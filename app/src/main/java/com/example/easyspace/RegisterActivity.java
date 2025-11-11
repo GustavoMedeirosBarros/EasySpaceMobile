@@ -43,7 +43,7 @@ public class RegisterActivity extends AppCompatActivity {
     private TextView textViewLogin;
     private ImageView imageViewClose;
     private ProgressBar progressBar;
-    private BottomNavigationView bottomNavigationView;
+    private BottomNavigationView bottomNavigation;
     private FirebaseManager firebaseManager;
 
     private TextWatcher cpfWatcher;
@@ -86,7 +86,7 @@ public class RegisterActivity extends AppCompatActivity {
         textViewLogin = findViewById(R.id.textViewLogin);
         imageViewClose = findViewById(R.id.imageViewClose);
         progressBar = findViewById(R.id.progressBar);
-        bottomNavigationView = findViewById(R.id.bottomNavigation);
+        bottomNavigation = findViewById(R.id.bottomNavigation);
         cpfWatcher = new MaskTextWatcher(editTextDocumento, "###.###.###-##");
         cnpjWatcher = new MaskTextWatcher(editTextDocumento, "##.###.###/####-##");
     }
@@ -144,17 +144,32 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void setupBottomNavigation() {
-        bottomNavigationView.setSelectedItemId(R.id.nav_profile);
-        bottomNavigationView.setOnItemSelectedListener(item -> {
+        bottomNavigation.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
+
             if (itemId == R.id.nav_home) {
                 startActivity(new Intent(this, MainActivity.class));
-                finish();
                 return true;
             } else if (itemId == R.id.nav_favorites) {
                 startActivity(new Intent(this, FavoritesActivity.class));
                 return true;
+            } else if (itemId == R.id.nav_criar_anuncio) {
+                if (firebaseManager.isLoggedIn()) {
+                    startActivity(new Intent(this, CriarAnuncioActivity.class));
+                } else {
+                    Toast.makeText(this, "Você precisa estar logado para criar um anúncio.", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(this, LoginActivity.class));
+                }
+                return true;
+            } else if (itemId == R.id.nav_reservations) {
+                startActivity(new Intent(this, MinhasReservasActivity.class));
+                return true;
             } else if (itemId == R.id.nav_profile) {
+                if (firebaseManager.isLoggedIn()) {
+                    startActivity(new Intent(this, ProfileActivity.class));
+                } else {
+                    startActivity(new Intent(this, LoginActivity.class));
+                }
                 return true;
             }
             return false;

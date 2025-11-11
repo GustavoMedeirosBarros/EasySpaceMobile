@@ -21,7 +21,6 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.textfield.TextInputEditText;
 
-// REMOVA TODAS AS IMPORTAÇÕES "com.mercadopago.android.px..."
 
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
@@ -32,14 +31,6 @@ import java.util.concurrent.TimeUnit;
 
 public class ReservationActivity extends AppCompatActivity {
 
-    // --- CREDENCIAIS DE TESTE ---
-    // Esta é a ID de Preferência que você gerou no Postman
-    // Verifique se esta é a ID da sua aplicação "Checkout Pro"
-    private static final String TEST_PREFERENCE_ID = "2982887351-cfae58bc-2b29-49b2-93f4-1721839e53c2"; //
-
-    // A CHAVE PÚBLICA NÃO É MAIS NECESSÁRIA AQUI
-    // private static final String MP_PUBLIC_KEY = "...";
-
     private MaterialToolbar toolbar;
     private ImageView imageViewLocal;
     private TextView textViewCategoria, textViewNome;
@@ -49,24 +40,21 @@ public class ReservationActivity extends AppCompatActivity {
     private TextView textViewTaxaValor, textViewTotalValor, textViewTotalValorInferior, textViewDatasInferior;
     private ProgressBar progressBar;
 
-    // Campos para "Por Hora"
     private LinearLayout layoutHoras;
     private TextInputEditText editTextData, editTextHoraInicio, editTextHoraFim;
 
     private Local local;
     private FirebaseManager firebaseManager;
     private Reserva novaReserva;
-    private final double TAXA_SERVICO_PERCENTUAL = 0.10; // 10%
+    private final double TAXA_SERVICO_PERCENTUAL = 0.10;
     private Calendar calInicio = Calendar.getInstance();
     private Calendar calFim = Calendar.getInstance();
 
-    // O LAUNCHER DO MERCADO PAGO FOI REMOVIDO
-    // private ActivityResultLauncher<Intent> mercadoPagoLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_reservation); //
+        setContentView(R.layout.activity_reservation);
 
         local = (Local) getIntent().getSerializableExtra("local");
         if (local == null) {
@@ -80,14 +68,10 @@ public class ReservationActivity extends AppCompatActivity {
         novaReserva.setTipoLocacao(local.getTipoLocacao());
 
         initViews();
-        // REMOVIDO: setupMercadoPagoLauncher();
         populateLocalInfo();
         setupListeners();
     }
 
-    // ... (initViews, populateLocalInfo, setupListeners, abrirSeletorDeDatas,
-    //      abrirSeletorDataUnica, abrirSeletorHorario, atualizarResumoPreco)
-    // Esses métodos não mudam e podem ser copiados do seu arquivo
 
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
@@ -291,29 +275,24 @@ public class ReservationActivity extends AppCompatActivity {
         buttonConfirmar.setEnabled(total > 0);
     }
 
-    // O MÉTODO setupMercadoPagoLauncher() FOI REMOVIDO
 
     private void iniciarPagamento() {
-        // Bloco IF REMOVIDO
 
         progressBar.setVisibility(View.VISIBLE);
         buttonConfirmar.setEnabled(false);
 
-        // Preenche o resto da reserva
         novaReserva.setLocalId(local.getId());
         novaReserva.setLocalNome(local.getNome());
         novaReserva.setLocalImageUrl(local.getImageUrl());
         novaReserva.setProprietarioId(local.getProprietarioId());
         novaReserva.setUsuarioId(firebaseManager.getCurrentUserId());
 
-        // Salva a reserva como "pendente"
         firebaseManager.salvarReserva(novaReserva, new FirebaseManager.TaskCallback() {
             @Override
             public void onSuccess() {
                 progressBar.setVisibility(View.GONE);
 
-                // Iniciar pagamento com Stripe
-                Intent intent = new Intent(ReservationActivity.this, PaymentStripeActivity.class);
+                Intent intent = new Intent(ReservationActivity.this, MockPaymentActivity.class);
                 intent.putExtra("reserva", novaReserva);
                 startActivity(intent);
 
@@ -328,10 +307,4 @@ public class ReservationActivity extends AppCompatActivity {
             }
         });
     }
-
-    // Os métodos handlePaymentSuccess, handlePaymentCancelled,
-    // e handlePaymentError FORAM REMOVIDOS.
-    // Eles agora estão na PaymentWebViewActivity.
-
-    // O método launchConfirmationActivity FOI REMOVIDO.
 }

@@ -3,12 +3,21 @@
     <item
         android:id="@+id/nav_home"
         android:icon="@drawable/ic_home"
-        android:title="Início" />
-    <!-- Removed nav_search item since search is now in MainActivity -->
+        android:title="Explorar" />
     <item
         android:id="@+id/nav_favorites"
         android:icon="@drawable/ic_favorite"
         android:title="Favoritos" />
+
+    <item
+        android:id="@+id/nav_criar_anuncio"
+        android:icon="@drawable/ic_add"
+        android:title="Anunciar" />
+
+    <item
+        android:id="@+id/nav_reservations"
+        android:icon="@drawable/ic_calendar"
+        android:title="Reservas" />
     <item
         android:id="@+id/nav_profile"
         android:icon="@drawable/ic_person"
