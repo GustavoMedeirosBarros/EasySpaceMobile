@@ -106,14 +106,14 @@
                 android:layout_height="56dp"
                 android:text="Entrar com Google"
                 android:textSize="16sp"
-                android:textColor="#fcd45c"
+                android:textColor="@color/text_primary"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                app:strokeColor="#fcd45c"
+                app:strokeColor="@color/black"
                 app:strokeWidth="1dp"
                 android:layout_marginTop="16dp"
                 app:cornerRadius="8dp"
                 app:icon="@drawable/ic_google"
-                app:iconTint="#fcd45c"
+                app:iconTint="@null"
                 app:layout_constraintTop_toBottomOf="@id/buttonLogin" />
 
             <TextView

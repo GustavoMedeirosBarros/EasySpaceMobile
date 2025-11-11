@@ -11,11 +11,11 @@ public class Usuario implements Serializable {
     private String nome;
     private String email;
     private String telefone;
-    private String documento; // Para CPF ou CNPJ
+    private String documento;
     private String cep;
     private String cidade;
     private String estado;
-    private String endereco; // Usado para Endereço Completo ou Rua
+    private String endereco;
     private String numero;
     private String complemento;
     private String bairro;
@@ -25,22 +25,21 @@ public class Usuario implements Serializable {
     private boolean isPessoaFisica;
     private long dataCriacao;
 
-    // --- CAMPOS ADICIONADOS PARA CORRIGIR ERROS DO LOGCAT ---
-    private boolean profileComplete; // Para `CompleteProfileActivity`
-    private String cpf; // `CompleteProfileActivity` estava salvando 'cpf'
-    private String rua; // `CompleteProfileActivity` estava salvando 'rua'
-    private List<String> favoritos; // Para a lista de favoritos
+    private boolean profileComplete;
+    private String cpf;
+    private String rua;
+    private List<String> favoritos;
+
 
     public Usuario() {
         this.dataCriacao = System.currentTimeMillis();
-        this.favoritos = new ArrayList<>(); // Inicializa a lista
+        this.favoritos = new ArrayList<>();
     }
 
     public Usuario(String id, String nome, String email, String telefone, String documento,
                    String cep, String endereco, String numero, String complemento, String bairro,
                    String cidade, String estado, String dataNascimento, String genero,
                    boolean isPessoaFisica) {
-        // ... (construtor existente)
         this.id = id;
         this.nome = nome;
         this.email = email;
@@ -79,7 +78,6 @@ public class Usuario implements Serializable {
         map.put("fotoUrl", fotoUrl);
         map.put("isPessoaFisica", isPessoaFisica);
 
-        // Adicionados
         map.put("profileComplete", profileComplete);
         map.put("cpf", cpf);
         map.put("rua", rua);
@@ -88,8 +86,7 @@ public class Usuario implements Serializable {
         return map;
     }
 
-    // --- Getters e Setters ---
-    // (Getters e Setters existentes para id, nome, email, etc.)
+
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -126,7 +123,6 @@ public class Usuario implements Serializable {
     public long getDataCriacao() { return dataCriacao; }
     public void setDataCriacao(long dataCriacao) { this.dataCriacao = dataCriacao; }
 
-    // --- Getters e Setters ADICIONADOS ---
 
     public boolean isProfileComplete() { return profileComplete; }
     public void setProfileComplete(boolean profileComplete) { this.profileComplete = profileComplete; }
@@ -140,10 +136,6 @@ public class Usuario implements Serializable {
     public List<String> getFavoritos() { return favoritos; }
     public void setFavoritos(List<String> favoritos) { this.favoritos = favoritos; }
 
-    // --- Getters Formatados (Opcionais, mas bons de manter) ---
-    // ... (getIniciais, getDocumentoFormatado, etc.) ...
-    // (O Firestore estava avisando sobre eles, mas eles não causam erro,
-    // apenas não são usados para salvar dados)
 
     public String getIniciais() {
         if (nome != null && !nome.isEmpty()) {
@@ -157,22 +149,18 @@ public class Usuario implements Serializable {
     }
 
     public String getDocumentoFormatado() {
-        // ...
-        return documento; // Simplificado para exemplo
+        return documento;
     }
 
     public String getTelefoneFormatado() {
-        // ...
-        return telefone; // Simplificado para exemplo
+        return telefone;
     }
 
     public String getCepFormatado() {
-        // ...
-        return cep; // Simplificado para exemplo
+        return cep;
     }
 
     public String getEnderecoCompleto() {
-        // ...
-        return endereco; // Simplificado para exemplo
+        return endereco;
     }
 }

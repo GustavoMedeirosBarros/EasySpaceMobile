@@ -2,14 +2,14 @@ package com.example.easyspace.adapters;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color; // Importe Color
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat; // Importe ContextCompat
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.easyspace.LocalDetailActivity;
@@ -37,19 +37,18 @@ public class ReservaAdapter extends RecyclerView.Adapter<ReservaAdapter.ReservaV
     @Override
     public void onBindViewHolder(@NonNull ReservaViewHolder holder, int position) {
         Reserva reserva = reservasList.get(position);
-        if (reserva == null) return; // Verificação de segurança
+        if (reserva == null) return;
 
         holder.textViewNomeLocal.setText(reserva.getLocalNome());
         holder.textViewDatas.setText(reserva.getDatasFormatadas());
         holder.textViewStatus.setText(reserva.getStatusFormatado());
         holder.textViewPreco.setText(reserva.getPrecoTotalFormatado());
 
-        // Define a cor do status
         if ("confirmed".equals(reserva.getStatus())) {
             holder.textViewStatus.setTextColor(ContextCompat.getColor(context, R.color.success));
         } else if ("pending".equals(reserva.getStatus())) {
             holder.textViewStatus.setTextColor(ContextCompat.getColor(context, R.color.primary_dark));
-        } else { // "cancelled", "failed", etc.
+        } else {
             holder.textViewStatus.setTextColor(ContextCompat.getColor(context, R.color.error));
         }
 
@@ -81,7 +80,6 @@ public class ReservaAdapter extends RecyclerView.Adapter<ReservaAdapter.ReservaV
         return reservasList != null ? reservasList.size() : 0;
     }
 
-    // NOVO MÉTODO: Para atualizar a lista filtrada
     public void updateData(List<Reserva> novasReservas) {
         this.reservasList.clear();
         this.reservasList.addAll(novasReservas);

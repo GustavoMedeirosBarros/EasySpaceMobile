@@ -18,9 +18,9 @@ public class Reserva implements Serializable {
     private double precoSubtotal;
     private double taxaServico;
     private double precoTotal;
-    private String status; // Ex: "pending", "confirmed", "cancelled"
+    private String status;
     private long dataCriacao;
-    private String tipoLocacao; // "dia" ou "hora"
+    private String tipoLocacao;
     private int quantidadeDiasHoras;
 
     private String metodoPagamento;
@@ -30,7 +30,6 @@ public class Reserva implements Serializable {
         this.status = "pending";
     }
 
-    // Getters e Setters
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
     public String getLocalId() { return localId; }
@@ -62,7 +61,6 @@ public class Reserva implements Serializable {
     public int getQuantidadeDiasHoras() { return quantidadeDiasHoras; }
     public void setQuantidadeDiasHoras(int quantidadeDiasHoras) { this.quantidadeDiasHoras = quantidadeDiasHoras; }
 
-    // Métodos utilitários para exibição
     public String getDatasFormatadas() {
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
         String inicio = sdf.format(new Date(dataInicio));
@@ -72,11 +70,11 @@ public class Reserva implements Serializable {
             SimpleDateFormat sdft = new SimpleDateFormat("dd/MM HH:mm", Locale.getDefault());
             inicio = sdft.format(new Date(dataInicio));
             fim = sdft.format(new Date(dataFim));
-            return inicio + " - " + fim.split(" ")[1]; // Ex: 10/11 09:00 - 11:00
+            return inicio + " - " + fim.split(" ")[1];
         }
 
         if (inicio.equals(fim)) {
-            return inicio; // Apenas um dia
+            return inicio;
         }
         return inicio + " - " + fim;
     }

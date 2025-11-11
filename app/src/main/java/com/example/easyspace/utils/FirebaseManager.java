@@ -10,16 +10,16 @@ import androidx.annotation.NonNull;
 
 import com.example.easyspace.CompleteProfileActivity;
 import com.example.easyspace.MainActivity;
-import com.example.easyspace.R; // Importe o R
+import com.example.easyspace.R;
 import com.example.easyspace.models.Local;
 import com.example.easyspace.models.Notification;
-import com.example.easyspace.models.Reserva; // Adicionado
+import com.example.easyspace.models.Reserva;
 import com.example.easyspace.models.Usuario;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.common.api.ApiException; // Adicionado
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
@@ -35,12 +35,12 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QueryDocumentSnapshot; // Adicionado
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
-import java.util.HashMap; // Adicionado
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,12 +49,11 @@ public class FirebaseManager {
     private FirebaseAuth auth;
     private FirebaseFirestore db;
     private GoogleSignInClient googleSignInClient;
-    private static final String USERS_COLLECTION = "usuarios"; // Corrigido para "usuarios"
+    private static final String USERS_COLLECTION = "usuarios";
     private static final String LOCAIS_COLLECTION = "locais";
     private static final String NOTIFICATIONS_COLLECTION = "notifications";
-    private static final String RESERVAS_COLLECTION = "reservas"; // Adicionado
+    private static final String RESERVAS_COLLECTION = "reservas";
 
-    // --- INTERFACES DE CALLBACK ---
     public interface AuthCallback { void onSuccess(String userId); void onFailure(String error); }
     public interface LocalCallback { void onSuccess(Local local); void onFailure(String error); }
     public interface LocaisCallback { void onSuccess(List<Local> locais); void onFailure(String error); }
@@ -64,23 +63,21 @@ public class FirebaseManager {
     public interface TaskCallback { void onSuccess(); void onFailure(String error); }
     public interface ProfileCompleteCallback { void onResult(boolean isComplete); }
     public interface FavoritesCallback { void onSuccess(List<Local> favorites); void onFailure(String error); }
-    public interface FavoriteStatusCallback { void onResult(boolean isFavorite); } // Renomeado de IsFavoriteCallback
+    public interface FavoriteStatusCallback { void onResult(boolean isFavorite); }
     public interface CountCallback { void onSuccess(int count); void onFailure(String error); }
     public interface NotificationsCallback { void onSuccess(List<Notification> notifications); void onFailure(String error); }
-    public interface ReservasCallback { void onSuccess(List<Reserva> reservas); void onFailure(String error); } // Adicionado
-    public interface PreferenciaCallback { void onSuccess(String preferenceId); void onFailure(String error); } // Adicionado
+    public interface ReservasCallback { void onSuccess(List<Reserva> reservas); void onFailure(String error); }
+    public interface PreferenciaCallback { void onSuccess(String preferenceId); void onFailure(String error); }
 
 
-    // --- CONSTRUTOR ---
     public FirebaseManager() {
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
     }
 
-    // --- MÉTODOS DE AUTENTICAÇÃO E PERFIL ---
     public void configureGoogleSignIn(Context context) {
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(context.getString(R.string.default_web_client_id)) // Use o string resource
+                .requestIdToken(context.getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
         googleSignInClient = GoogleSignIn.getClient(context, gso);
@@ -121,7 +118,7 @@ public class FirebaseManager {
                     usuario.setEmail(firebaseUser.getEmail());
                     usuario.setFotoUrl(firebaseUser.getPhotoUrl() != null ? firebaseUser.getPhotoUrl().toString() : "");
                     usuario.setPessoaFisica(true);
-                    usuario.setProfileComplete(false); // Novo usuário do Google precisa completar o perfil
+                    usuario.setProfileComplete(false);
                     db.collection(USERS_COLLECTION).document(userId).set(usuario)
                             .addOnSuccessListener(aVoid -> callback.onSuccess(userId))
                             .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
@@ -145,13 +142,11 @@ public class FirebaseManager {
                 if (firebaseUser != null) {
                     String userId = firebaseUser.getUid();
 
-                    // Atualiza o display name no Auth
                     UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
                             .setDisplayName(nome)
                             .build();
                     firebaseUser.updateProfile(profileUpdates);
 
-                    // Cria o objeto no Firestore
                     Usuario usuario = new Usuario();
                     usuario.setId(userId);
                     usuario.setNome(nome);
@@ -162,13 +157,14 @@ public class FirebaseManager {
                     usuario.setCidade(cidade);
                     usuario.setEstado(estado);
                     usuario.setPessoaFisica(isPessoaFisica);
-                    usuario.setEndereco(endereco); // Este é o endereço completo/rua
+                    usuario.setEndereco(endereco);
                     usuario.setComplemento(complemento);
                     usuario.setBairro(bairro);
                     usuario.setDataNascimento(dataNascimento);
                     usuario.setGenero(genero);
                     usuario.setFotoUrl("");
-                    usuario.setProfileComplete(true); // Perfil completo no registro
+                    usuario.setProfileComplete(true);
+
 
                     db.collection(USERS_COLLECTION).document(userId).set(usuario)
                             .addOnSuccessListener(aVoid -> callback.onSuccess(userId))
@@ -223,7 +219,6 @@ public class FirebaseManager {
             return;
         }
 
-        // Atualiza o nome no Auth
         FirebaseUser firebaseUser = auth.getCurrentUser();
         if (firebaseUser != null && !Objects.equals(firebaseUser.getDisplayName(), usuario.getNome())) {
             UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
@@ -232,9 +227,8 @@ public class FirebaseManager {
             firebaseUser.updateProfile(profileUpdates);
         }
 
-        // Atualiza no Firestore
         db.collection(USERS_COLLECTION).document(userId)
-                .set(usuario) // Salva o objeto inteiro
+                .set(usuario)
                 .addOnSuccessListener(aVoid -> callback.onSuccess(userId))
                 .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
@@ -251,7 +245,6 @@ public class FirebaseManager {
         });
     }
 
-    // --- MÉTODOS DE FAVORITOS ---
     public void addToFavorites(String localId, UpdateCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
@@ -311,12 +304,9 @@ public class FirebaseManager {
                     }
 
                     if (favoritoIds.size() > 30) {
-                        // Limitação do Firestore 'whereIn'
                         List<String> subList = favoritoIds.subList(0, 30);
                         db.collection(LOCAIS_COLLECTION).whereIn("id", subList).get().addOnCompleteListener(locaisTask -> {
-                            //... (mesma lógica abaixo)
                         });
-                        // Idealmente, implementar paginação
                     }
 
                     db.collection(LOCAIS_COLLECTION).whereIn("id", favoritoIds).get().addOnCompleteListener(locaisTask -> {
@@ -336,7 +326,6 @@ public class FirebaseManager {
         });
     }
 
-    // --- MÉTODOS DE LOCAIS (ANÚNCIOS) ---
     public void salvarLocal(Local local, TaskCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
@@ -345,9 +334,8 @@ public class FirebaseManager {
         }
         local.setProprietarioId(user.getUid());
 
-        // Gera ID primeiro
         DocumentReference localRef = db.collection(LOCAIS_COLLECTION).document();
-        local.setId(localRef.getId()); // Define o ID no objeto
+        local.setId(localRef.getId());
 
         localRef.set(local).addOnSuccessListener(aVoid -> {
             callback.onSuccess();
@@ -420,7 +408,6 @@ public class FirebaseManager {
                 .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
-    // --- MÉTODOS DE RESERVA (ATUALIZADOS) ---
 
     public void salvarReserva(Reserva reserva, TaskCallback callback) {
         if (!isLoggedIn()) {
@@ -497,7 +484,6 @@ public class FirebaseManager {
                 });
     }
 
-    // --- MÉTODOS DE CONTAGEM (PERFIL) ---
     public void getUserListingCount(String userId, CountCallback callback) {
         db.collection(LOCAIS_COLLECTION).whereEqualTo("proprietarioId", userId).get()
                 .addOnSuccessListener(q -> callback.onSuccess(q.size()))
@@ -509,7 +495,6 @@ public class FirebaseManager {
                 .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
-    // --- MÉTODOS DE NOTIFICAÇÃO (CORRIGIDO) ---
     public void updateFcmToken(String token) {
         if (isLoggedIn()) {
             String userId = getCurrentUserId();
@@ -521,7 +506,6 @@ public class FirebaseManager {
     }
 
     public void getUserNotifications(String userId, NotificationsCallback callback) {
-        // As notificações agora estão aninhadas dentro do usuário
         db.collection(USERS_COLLECTION).document(userId).collection(NOTIFICATIONS_COLLECTION)
                 .orderBy("timestamp", Query.Direction.DESCENDING).get()
                 .addOnSuccessListener(q -> {
@@ -543,10 +527,8 @@ public class FirebaseManager {
             return;
         }
 
-        // Esta é a subcoleção correta
         String id = db.collection(USERS_COLLECTION).document(userId).collection(NOTIFICATIONS_COLLECTION).document().getId();
 
-        // Esta chamada (String, String, String, long, boolean) CORRESPONDE ao Notification.java
         Notification n = new Notification(title, message, "booking", System.currentTimeMillis(), false);
         n.setId(id);
 
@@ -559,7 +541,6 @@ public class FirebaseManager {
                 });
     }
 
-    // --- MÉTODOS GERAIS ---
     public void logout() {
         auth.signOut();
         if (googleSignInClient != null) googleSignInClient.signOut();
