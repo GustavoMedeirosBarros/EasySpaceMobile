@@ -78,14 +78,29 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        bottomNavigation.setSelectedItemId(R.id.nav_profile);
         bottomNavigation.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
+
             if (itemId == R.id.nav_home) {
                 startActivity(new Intent(this, MainActivity.class));
+                finish();
                 return true;
             } else if (itemId == R.id.nav_favorites) {
                 startActivity(new Intent(this, FavoritesActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_criar_anuncio) {
+                if (firebaseManager.isLoggedIn()) {
+                    startActivity(new Intent(this, CriarAnuncioActivity.class));
+                } else {
+                    Toast.makeText(this, "Você precisa estar logado para criar um anúncio.", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(this, LoginActivity.class));
+                }
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_reservations) {
+                startActivity(new Intent(this, MinhasReservasActivity.class));
+                finish();
                 return true;
             } else if (itemId == R.id.nav_profile) {
                 return true;
