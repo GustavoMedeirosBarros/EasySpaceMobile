@@ -1,61 +1,42 @@
 package com.example.easyspace;
 
-import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import androidx.appcompat.app.AppCompatActivity;
-
 import com.google.android.material.appbar.MaterialToolbar;
-import com.google.android.material.card.MaterialCardView;
 
 public class HelpActivity extends AppCompatActivity {
 
-    private MaterialToolbar toolbar;
-    private MaterialCardView cardFaq, cardSupport, cardWhatsapp;
+    private static final String BOTPRESS_URL = "https://cdn.botpress.cloud/webchat/v3.3/shareable.html?configUrl=https://files.bpcontent.cloud/2025/10/13/22/20251013225829-GQ2LG854.json";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_help);
 
-        initViews();
         setupToolbar();
-        setupListeners();
-    }
-
-    private void initViews() {
-        toolbar = findViewById(R.id.toolbar);
-        cardFaq = findViewById(R.id.cardFaq);
-        cardSupport = findViewById(R.id.cardSupport);
-        cardWhatsapp = findViewById(R.id.cardWhatsapp);
+        setupWebView();
     }
 
     private void setupToolbar() {
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("Central de Ajuda");
-        }
         toolbar.setNavigationOnClickListener(v -> finish());
     }
 
-    private void setupListeners() {
-        cardFaq.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setData(Uri.parse("https://easyspace.com/faq"));
-        });
+    private void setupWebView() {
+        WebView webView = findViewById(R.id.webviewChatbot);
+        WebSettings webSettings = webView.getSettings();
 
-        cardSupport.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_SENDTO);
-            intent.setData(Uri.parse("mailto:suporte@easyspace.com"));
-            startActivity(Intent.createChooser(intent, "Enviar email"));
-        });
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setDomStorageEnabled(true);
+        webSettings.setLoadWithOverviewMode(true);
+        webSettings.setUseWideViewPort(true);
 
-        cardWhatsapp.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setData(Uri.parse("https://wa.me/5511999999999"));
-            startActivity(intent);
-        });
+        webView.setWebViewClient(new WebViewClient());
+
+        webView.loadUrl(BOTPRESS_URL);
     }
 }

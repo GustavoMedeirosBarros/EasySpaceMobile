@@ -30,9 +30,6 @@
             android:name=".MockPaymentActivity"
             android:exported="false" />
         <activity
-            android:name=".ConfirmationActivity"
-            android:exported="false" />
-        <activity
             android:name=".ReservationActivity"
             android:exported="false" />
         <activity
@@ -43,7 +40,8 @@
             android:exported="false" />
         <activity
             android:name=".HelpActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".EditProfileActivity"
             android:exported="false" />
