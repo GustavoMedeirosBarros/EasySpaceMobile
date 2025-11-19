@@ -25,7 +25,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class PaymentActivity extends AppCompatActivity {
 
     private static final String TAG = "EasySpacePay";
-    private static final String MP_PUBLIC_KEY = "TEST-931c057b-7169-49c3-9964-c9a3163771ae";
+    private static final String MP_PUBLIC_KEY = "API";
     private static final String BACKEND_URL = "https://easyspacebackendmobile.vercel.app/";
 
     private TextInputEditText editCardNumber, editExpiry, editCvv, editHolderName, editDocNumber;
