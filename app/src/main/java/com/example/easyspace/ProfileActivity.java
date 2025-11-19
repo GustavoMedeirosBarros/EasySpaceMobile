@@ -99,9 +99,13 @@ public class ProfileActivity extends AppCompatActivity {
                 finish();
                 return true;
             } else if (itemId == R.id.nav_reservations) {
-                startActivity(new Intent(this, MinhasReservasActivity.class));
-                finish();
-                return true;
+                if (firebaseManager.isLoggedIn()) {
+                    startActivity(new Intent(this, MinhasReservasActivity.class));
+                }
+                else {
+                    Toast.makeText(this, "Você precisa estar logado para ver suas reservas.", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(this, LoginActivity.class));
+                }
             } else if (itemId == R.id.nav_profile) {
                 return true;
             }

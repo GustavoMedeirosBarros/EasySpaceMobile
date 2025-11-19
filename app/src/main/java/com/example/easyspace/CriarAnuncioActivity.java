@@ -42,6 +42,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.location.Address;
+import android.location.Geocoder;
+import java.util.Locale;
+import java.io.IOException;
+
 public class CriarAnuncioActivity extends AppCompatActivity {
 
     private ImageButton buttonVoltar;
@@ -79,6 +84,14 @@ public class CriarAnuncioActivity extends AppCompatActivity {
         setupListeners();
         setupDropdowns();
         setupBottomNavigation();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (bottomNavigation != null) {
+            bottomNavigation.getMenu().findItem(R.id.nav_criar_anuncio).setChecked(true);
+        }
     }
 
     private void initViews() {
@@ -258,12 +271,6 @@ public class CriarAnuncioActivity extends AppCompatActivity {
                 startActivity(new Intent(this, FavoritesActivity.class));
                 return true;
             } else if (itemId == R.id.nav_criar_anuncio) {
-                if (firebaseManager.isLoggedIn()) {
-                    startActivity(new Intent(this, CriarAnuncioActivity.class));
-                } else {
-                    Toast.makeText(this, "Você precisa estar logado para criar um anúncio.", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(this, LoginActivity.class));
-                }
                 return true;
             } else if (itemId == R.id.nav_reservations) {
                 startActivity(new Intent(this, MinhasReservasActivity.class));
@@ -466,46 +473,31 @@ public class CriarAnuncioActivity extends AppCompatActivity {
 
     private void geocodeAddress(String address, OnGeocodeListener listener) {
         new Thread(() -> {
+            double latitude = 0;
+            double longitude = 0;
+
             try {
-                String encodedAddress = java.net.URLEncoder.encode(address, "UTF-8");
-                String urlString = "https://nominatim.openstreetmap.org/search?q=" + encodedAddress + "&format=json&limit=1";
+                Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+                List<Address> addresses = geocoder.getFromLocationName(address, 1);
 
-                java.net.URL url = new java.net.URL(urlString);
-                java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
-                connection.setRequestProperty("User-Agent", "EasySpace/1.0");
-                connection.setRequestMethod("GET");
-
-                java.io.BufferedReader reader = new java.io.BufferedReader(
-                        new java.io.InputStreamReader(connection.getInputStream()));
-                StringBuilder response = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    response.append(line);
-                }
-                reader.close();
-
-                String jsonResponse = response.toString();
-                if (jsonResponse.startsWith("[") && jsonResponse.length() > 2) {
-                    int latIndex = jsonResponse.indexOf("\"lat\":\"") + 7;
-                    int latEndIndex = jsonResponse.indexOf("\"", latIndex);
-                    String latStr = jsonResponse.substring(latIndex, latEndIndex);
-
-                    int lonIndex = jsonResponse.indexOf("\"lon\":\"") + 7;
-                    int lonEndIndex = jsonResponse.indexOf("\"", lonIndex);
-                    String lonStr = jsonResponse.substring(lonIndex, lonEndIndex);
-
-                    double latitude = Double.parseDouble(latStr);
-                    double longitude = Double.parseDouble(lonStr);
-
-                    runOnUiThread(() -> listener.onGeocode(latitude, longitude));
+                if (addresses != null && !addresses.isEmpty()) {
+                    Address location = addresses.get(0);
+                    latitude = location.getLatitude();
+                    longitude = location.getLongitude();
                 } else {
-                    runOnUiThread(() -> listener.onGeocode(-23.5505, -46.6333));
+                    latitude = -23.5505;
+                    longitude = -46.6333;
                 }
-
-            } catch (Exception e) {
+            } catch (IOException e) {
                 e.printStackTrace();
-                runOnUiThread(() -> listener.onGeocode(-23.5505, -46.6333));
+                latitude = -23.5505;
+                longitude = -46.6333;
             }
+
+            double finalLat = latitude;
+            double finalLon = longitude;
+
+            runOnUiThread(() -> listener.onGeocode(finalLat, finalLon));
         }).start();
     }
 

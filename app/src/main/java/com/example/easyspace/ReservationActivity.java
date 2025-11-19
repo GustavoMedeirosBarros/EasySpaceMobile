@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 public class ReservationActivity extends AppCompatActivity {
 
+    private static final int REQUEST_CODE_PAYMENT = 100;
     private MaterialToolbar toolbar;
     private ImageView imageViewLocal;
     private TextView textViewCategoria, textViewNome;
@@ -277,9 +278,10 @@ public class ReservationActivity extends AppCompatActivity {
 
 
     private void iniciarPagamento() {
-
-        progressBar.setVisibility(View.VISIBLE);
-        buttonConfirmar.setEnabled(false);
+        if (novaReserva.getPrecoTotal() <= 0) {
+            Toast.makeText(this, "Valor inválido para reserva.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         novaReserva.setLocalId(local.getId());
         novaReserva.setLocalNome(local.getNome());
@@ -287,15 +289,41 @@ public class ReservationActivity extends AppCompatActivity {
         novaReserva.setProprietarioId(local.getProprietarioId());
         novaReserva.setUsuarioId(firebaseManager.getCurrentUserId());
 
+        Intent intent = new Intent(ReservationActivity.this, PaymentActivity.class);
+
+        intent.putExtra("valor", novaReserva.getPrecoTotal());
+
+        intent.putExtra("reserva", novaReserva);
+
+        startActivityForResult(intent, REQUEST_CODE_PAYMENT);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == REQUEST_CODE_PAYMENT) {
+            if (resultCode == RESULT_OK) {
+                finalizarReservaNoFirebase();
+            } else {
+                Toast.makeText(this, "Pagamento não realizado", Toast.LENGTH_SHORT).show();
+                buttonConfirmar.setEnabled(true);
+            }
+        }
+    }
+    private void finalizarReservaNoFirebase() {
+        progressBar.setVisibility(View.VISIBLE);
+        buttonConfirmar.setEnabled(false);
+
         firebaseManager.salvarReserva(novaReserva, new FirebaseManager.TaskCallback() {
             @Override
             public void onSuccess() {
                 progressBar.setVisibility(View.GONE);
+                Toast.makeText(ReservationActivity.this, "Reserva confirmada com sucesso!", Toast.LENGTH_LONG).show();
 
-                Intent intent = new Intent(ReservationActivity.this, MockPaymentActivity.class);
-                intent.putExtra("reserva", novaReserva);
+                Intent intent = new Intent(ReservationActivity.this, MinhasReservasActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
-
                 finish();
             }
 
@@ -303,7 +331,7 @@ public class ReservationActivity extends AppCompatActivity {
             public void onFailure(String error) {
                 progressBar.setVisibility(View.GONE);
                 buttonConfirmar.setEnabled(true);
-                Toast.makeText(ReservationActivity.this, "Erro ao criar reserva: " + error, Toast.LENGTH_SHORT).show();
+                Toast.makeText(ReservationActivity.this, "Erro ao salvar reserva: " + error, Toast.LENGTH_LONG).show();
             }
         });
     }

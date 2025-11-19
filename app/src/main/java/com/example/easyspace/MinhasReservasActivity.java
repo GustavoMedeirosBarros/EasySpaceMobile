@@ -15,15 +15,15 @@ import com.example.easyspace.adapters.ReservaAdapter;
 import com.example.easyspace.models.Reserva;
 import com.example.easyspace.utils.FirebaseManager;
 import com.google.android.material.appbar.MaterialToolbar;
-import com.google.android.material.bottomnavigation.BottomNavigationView; // Esta importação não é mais usada, mas pode ficar
-import com.google.android.material.tabs.TabLayout; // Importe o TabLayout
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.tabs.TabLayout;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors; // Importe o Collectors
+import java.util.stream.Collectors;
 
 public class MinhasReservasActivity extends AppCompatActivity {
-
+    private BottomNavigationView bottomNavigation;
     private MaterialToolbar toolbar;
     private RecyclerView recyclerViewReservas;
     private ReservaAdapter adapter;
@@ -42,17 +42,59 @@ public class MinhasReservasActivity extends AppCompatActivity {
         firebaseManager = new FirebaseManager();
         initViews();
         setupToolbar();
+        setupBottomNavigation();
         setupRecyclerView();
         setupTabLayout();
         loadReservas();
     }
 
     private void initViews() {
+        bottomNavigation = findViewById(R.id.bottomNavigation);
         toolbar = findViewById(R.id.toolbar);
         tabLayout = findViewById(R.id.tabLayout);
         recyclerViewReservas = findViewById(R.id.recyclerViewReservas);
         progressBar = findViewById(R.id.progressBar);
         textViewEmptyState = findViewById(R.id.textViewEmptyState);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (bottomNavigation != null) {
+            bottomNavigation.getMenu().findItem(R.id.nav_reservations).setChecked(true);
+        }
+    }
+
+    private void setupBottomNavigation() {
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+
+            if (itemId == R.id.nav_home) {
+                startActivity(new Intent(this, MainActivity.class));
+                return true;
+            } else if (itemId == R.id.nav_favorites) {
+                startActivity(new Intent(this, FavoritesActivity.class));
+                return true;
+            } else if (itemId == R.id.nav_criar_anuncio) {
+                if (firebaseManager.isLoggedIn()) {
+                    startActivity(new Intent(this, CriarAnuncioActivity.class));
+                } else {
+                    Toast.makeText(this, "Você precisa estar logado para criar um anúncio.", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(this, LoginActivity.class));
+                }
+                return true;
+            } else if (itemId == R.id.nav_reservations) {
+                return true;
+            } else if (itemId == R.id.nav_profile) {
+                if (firebaseManager.isLoggedIn()) {
+                    startActivity(new Intent(this, ProfileActivity.class));
+                } else {
+                    startActivity(new Intent(this, LoginActivity.class));
+                }
+                return true;
+            }
+            return false;
+        });
     }
 
     private void setupToolbar() {
@@ -63,7 +105,6 @@ public class MinhasReservasActivity extends AppCompatActivity {
 
     private void setupRecyclerView() {
         reservaListTotal = new ArrayList<>();
-        // Inicializa o adapter com uma lista vazia (será filtrada depois)
         adapter = new ReservaAdapter(this, new ArrayList<>());
         recyclerViewReservas.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewReservas.setAdapter(adapter);

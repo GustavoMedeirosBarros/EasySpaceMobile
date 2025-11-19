@@ -2,19 +2,25 @@ package com.example.easyspace.adapters;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
+import android.content.res.ColorStateList;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
 import com.example.easyspace.LocalDetailActivity;
 import com.example.easyspace.R;
 import com.example.easyspace.models.Reserva;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.chip.Chip;
+
 import java.util.List;
 
 public class ReservaAdapter extends RecyclerView.Adapter<ReservaAdapter.ReservaViewHolder> {
@@ -40,21 +46,27 @@ public class ReservaAdapter extends RecyclerView.Adapter<ReservaAdapter.ReservaV
         if (reserva == null) return;
 
         holder.textViewNomeLocal.setText(reserva.getLocalNome());
-        holder.textViewDatas.setText(reserva.getDatasFormatadas());
-        holder.textViewStatus.setText(reserva.getStatusFormatado());
-        holder.textViewPreco.setText(reserva.getPrecoTotalFormatado());
+        holder.textViewPeriodo.setText(reserva.getDatasFormatadas());
+        holder.textViewPrecoTotal.setText(reserva.getPrecoTotalFormatado());
 
-        if ("confirmed".equals(reserva.getStatus())) {
-            holder.textViewStatus.setTextColor(ContextCompat.getColor(context, R.color.success));
-        } else if ("pending".equals(reserva.getStatus())) {
-            holder.textViewStatus.setTextColor(ContextCompat.getColor(context, R.color.primary_dark));
+        String status = reserva.getStatus();
+        holder.chipStatus.setText(getStatusTraduzido(status));
+
+        int colorId;
+        if ("confirmed".equals(status)) {
+            colorId = R.color.success;
+        } else if ("pending".equals(status)) {
+            colorId = R.color.primary;
+        } else if ("cancelled".equals(status)) {
+            colorId = R.color.error;
         } else {
-            holder.textViewStatus.setTextColor(ContextCompat.getColor(context, R.color.error));
+            colorId = R.color.text_secondary;
         }
+        holder.chipStatus.setChipBackgroundColor(ColorStateList.valueOf(ContextCompat.getColor(context, colorId)));
 
         String imageUrl = reserva.getLocalImageUrl();
         if (imageUrl != null && !imageUrl.isEmpty()) {
-            if (imageUrl.startsWith("http") || imageUrl.startsWith("https")) {
+            if (imageUrl.startsWith("http")) {
                 Glide.with(context).load(imageUrl).centerCrop().into(holder.imageViewLocal);
             } else {
                 try {
@@ -73,6 +85,21 @@ public class ReservaAdapter extends RecyclerView.Adapter<ReservaAdapter.ReservaV
             intent.putExtra("localId", reserva.getLocalId());
             context.startActivity(intent);
         });
+
+        holder.buttonCancelar.setOnClickListener(v -> {
+            Toast.makeText(context, "Cancelar reserva: " + reserva.getLocalNome(), Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private String getStatusTraduzido(String status) {
+        if (status == null) return "Desconhecido";
+        switch (status) {
+            case "confirmed": return "Confirmada";
+            case "pending": return "Pendente";
+            case "cancelled": return "Cancelada";
+            case "completed": return "Concluída";
+            default: return status;
+        }
     }
 
     @Override
@@ -88,15 +115,18 @@ public class ReservaAdapter extends RecyclerView.Adapter<ReservaAdapter.ReservaV
 
     public static class ReservaViewHolder extends RecyclerView.ViewHolder {
         ImageView imageViewLocal;
-        TextView textViewNomeLocal, textViewDatas, textViewStatus, textViewPreco;
+        TextView textViewNomeLocal, textViewPeriodo, textViewPrecoTotal;
+        Chip chipStatus;
+        MaterialButton buttonCancelar;
 
         public ReservaViewHolder(@NonNull View itemView) {
             super(itemView);
             imageViewLocal = itemView.findViewById(R.id.imageViewLocal);
             textViewNomeLocal = itemView.findViewById(R.id.textViewNomeLocal);
-            textViewDatas = itemView.findViewById(R.id.textViewDatas);
-            textViewStatus = itemView.findViewById(R.id.textViewStatus);
-            textViewPreco = itemView.findViewById(R.id.textViewPreco);
+            textViewPeriodo = itemView.findViewById(R.id.textViewPeriodo);
+            textViewPrecoTotal = itemView.findViewById(R.id.textViewPrecoTotal);
+            chipStatus = itemView.findViewById(R.id.chipStatus);
+            buttonCancelar = itemView.findViewById(R.id.buttonCancelar);
         }
     }
 }

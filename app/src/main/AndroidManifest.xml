@@ -27,6 +27,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.EasySpace">
         <activity
+            android:name=".PaymentActivity"
+            android:exported="false" />
+        <activity
             android:name=".MockPaymentActivity"
             android:exported="false" />
         <activity

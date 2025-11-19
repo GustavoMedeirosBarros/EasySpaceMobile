@@ -54,19 +54,29 @@
                         android:layout_height="match_parent"
                         app:queryHint="Buscar por nome ou local..."
                         app:iconifiedByDefault="false"
+                        android:background="@color/light_gray"
                         app:searchIcon="@drawable/ic_search" />
                 </com.google.android.material.card.MaterialCardView>
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/buttonFiltros"
-                    style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+                <com.google.android.material.card.MaterialCardView
                     android:layout_width="56dp"
                     android:layout_height="56dp"
-                    app:icon="@drawable/ic_filter"
-                    app:iconTint="@color/primary"
-                    app:backgroundTint="@color/primary_light"
-                    app:cornerRadius="8dp"
-                    android:contentDescription="Filtros" />
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="2dp"
+                    app:cardBackgroundColor="@color/primary_light"
+                    android:layout_marginStart="8dp">
+
+                    <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/buttonFiltros"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/ic_filter"
+                        android:tint="@color/black"
+                        android:background="@android:color/transparent"
+                        android:scaleType="center"
+                        android:contentDescription="Filtros" />
+
+                </com.google.android.material.card.MaterialCardView>
 
             </LinearLayout>
         </LinearLayout>

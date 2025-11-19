@@ -12,6 +12,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatImageButton;
 import androidx.appcompat.widget.SearchView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -38,7 +39,6 @@ import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity implements CategoriaAdapter.OnCategoriaClickListener {
 
-    private static final String MP_PUBLIC_KEY = "TEST-27e91433-dae1-40d1-9b26-155234ec887f";
     private BottomNavigationView bottomNavigation;
     private FirebaseManager firebaseManager;
     private RecyclerView recyclerViewCategorias, recyclerViewLocais;
@@ -49,13 +49,11 @@ public class MainActivity extends AppCompatActivity implements CategoriaAdapter.
     private List<Local> locaisList;
     private List<Local> todosLocaisFiltrados;
     private SearchView searchView;
-    private MaterialButton buttonFiltros;
+    private AppCompatImageButton buttonFiltros;
     private ProgressBar progressBar;
     private TextView textViewEmptyLocais;
-
     private TextView textViewVerTodosDestaques, textViewVerTodosRecentes;
     private TextView textViewVerTodosPopulares, textViewVerTodosAvaliados;
-
     private String currentCategory = null;
     private double currentMinPreco = 0;
     private double currentMaxPreco = 500;
@@ -121,8 +119,13 @@ public class MainActivity extends AppCompatActivity implements CategoriaAdapter.
                 }
                 return true;
             } else if (itemId == R.id.nav_reservations) {
-                startActivity(new Intent(this, MinhasReservasActivity.class));
-                return true;
+                if (firebaseManager.isLoggedIn()) {
+                    startActivity(new Intent(this, MinhasReservasActivity.class));
+                }
+                else {
+                    Toast.makeText(this, "Você precisa estar logado para ver suas reservas.", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(this, LoginActivity.class));
+                }
             } else if (itemId == R.id.nav_profile) {
                 if (firebaseManager.isLoggedIn()) {
                     startActivity(new Intent(this, ProfileActivity.class));

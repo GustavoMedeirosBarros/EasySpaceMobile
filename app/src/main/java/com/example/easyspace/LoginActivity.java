@@ -117,18 +117,26 @@ public class LoginActivity extends AppCompatActivity {
                 }
                 return true;
             } else if (itemId == R.id.nav_reservations) {
-                startActivity(new Intent(this, MinhasReservasActivity.class));
-                return true;
-            } else if (itemId == R.id.nav_profile) {
                 if (firebaseManager.isLoggedIn()) {
-                    startActivity(new Intent(this, ProfileActivity.class));
-                } else {
+                    startActivity(new Intent(this, MinhasReservasActivity.class));
+                }
+                else {
+                    Toast.makeText(this, "Você precisa estar logado para ver suas reservas.", Toast.LENGTH_SHORT).show();
                     startActivity(new Intent(this, LoginActivity.class));
                 }
+            } else if (itemId == R.id.nav_profile) {
                 return true;
             }
             return false;
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (bottomNavigation != null) {
+            bottomNavigation.getMenu().findItem(R.id.nav_profile).setChecked(true);
+        }
     }
 
     private void iniciarLoginGoogle() {
@@ -242,10 +250,6 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * Busca o token FCM mais recente e o salva no Firestore
-     * antes de redirecionar o usuário.
-     */
     private void updateFcmTokenAndRedirect(boolean isProfileComplete) {
         FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
